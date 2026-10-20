@@ -563,6 +563,13 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         </div>
 
         <div class="sub">
+          <h3>Add to the faculty item bank</h3>
+          <p class="hint">Formats each final item as one row for the shared DPT Item Bank Google Sheet, with values that match the sheet's dropdowns. Copy the rows from the AI, click the first empty cell in column A of the Item Bank tab, and paste. Then add the Item ID, your name as Author, and the date.</p>
+          <details class="prompt"><summary>Item bank prompt preview</summary><pre id="pv-bank"></pre></details>
+          <div class="row"><button type="button" class="btn gold" id="btn-bank">Copy item bank prompt</button></div>
+        </div>
+
+        <div class="sub">
           <h3>Format for Canvas</h3>
           <div class="tip"><b>Which path?</b><span>Most faculty use QTI import: it brings in every item, its key, and feedback at once. Pasting by hand works for a short quiz.</span></div>
           <div class="pbtns" id="canvas-btns"></div>
@@ -761,6 +768,38 @@ Keep the stem and options exactly as approved. No extra commentary.`},
  {t:"Student remediation sheet",d:"Post after the exam closes",p:()=>`Using the final items, write a student-facing remediation sheet: for each item, the concept tested, the key reasoning step, the common error behind each distractor, and the CPG or textbook reference to review. Do not include the full stems or options.`}
 ];
 
+function bankPrompt(){
+  const opts=id=>[...document.querySelectorAll("#"+id+" option")].map(o=>o.textContent.trim()).filter((t,i,a)=>t&&!t.startsWith("Select")&&a.indexOf(t)===i);
+  const stages=opts("f-stage"), systems=opts("f-system"), cats=opts("f-cat");
+  const blooms=["Remember / understand","Apply","Analyze / evaluate","Remember / apply / analyze (mixed)"];
+  return `Format every final item as one row for our faculty item bank spreadsheet.
+
+Output rules:
+- One row per item, tab-separated, inside a single code block. No header row and no commentary.
+- No line breaks or tab characters inside any cell. Replace them with a space.
+- Exactly 20 columns per row, in this order:
+1. Item ID: leave empty
+2. Status: Draft
+3. Course: ${v("f-course")||"the course name"}
+4. Curriculum stage: ${v("f-stage")||"one of: "+stages.join(" | ")}
+5. Topic
+6. Learning objective the item maps to
+7. NPTE system or area, exactly one of: ${systems.join(" | ")}
+8. Content category, exactly one of: ${cats.join(" | ")}
+9. Cognitive level, exactly one of: ${blooms.join(" | ")}
+10. Item format: Standalone or Cluster
+11. Cluster ID: the same short label for every item in one case cluster (for example C1), otherwise empty
+12. Practice setting
+13. Stem
+14. Option A
+15. Option B
+16. Option C
+17. Option D
+18. Key: A, B, C, or D
+19. Rationale for the key and each distractor
+20. Source / reference with page, slide, or section
+Use the exact wording above for columns 7, 8, and 9 so the spreadsheet dropdowns accept the values.`;
+}
 function finalPrompt(){
   return `We are finished writing items. Compile the final set:
 1. Every accepted item in its latest revised version, numbered in order, in this format: Item #, NPTE area / category / Bloom's, Stem, A–D, Key${$("#f-rationale").checked?", rationale for each option":", brief rationale"}, Reference.
@@ -837,6 +876,7 @@ function unlock(n){state.unlocked=Math.max(state.unlocked,n);show(n);}
 function refresh(){
   $("#pv-start").textContent=starter();
   $("#pv-final").textContent=finalPrompt();
+  $("#pv-bank").textContent=bankPrompt();
   renderLib();
   $("#embed-code").textContent=embed();
   save();
@@ -862,6 +902,7 @@ $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
 $("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=true));
 $("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=false));
+$("#btn-bank").addEventListener("click",()=>copy(bankPrompt(),"Item bank prompt"));
 $("#btn-final").addEventListener("click",()=>copy(finalPrompt(),"Final set prompt"));
 $("#btn-prev").addEventListener("click",()=>{$("#f-item").value=Math.max(1,+item()-1);refresh();});
 $("#btn-next").addEventListener("click",()=>{$("#f-item").value=+item()+1;refresh();});
