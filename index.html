@@ -163,6 +163,20 @@ ol.big b{font-weight:700}
 .shield .stack{display:flex;flex-direction:column;gap:10px;min-width:0}
 .mono-ex{font-family:var(--mono);font-size:.86em;background:var(--surface);padding:1px 6px;border-radius:4px}
 
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.7}
+select:invalid{color:var(--muted)}
+select option{color:var(--ink)}
+.opt-pill{font:600 .74rem var(--body);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.toggle{display:flex;align-items:center;gap:12px;font-size:1.02rem;font-weight:600;cursor:pointer;padding:12px 14px;border:1.5px dashed var(--line);border-radius:10px}
+.toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.toggle .track{flex:none;width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;transition:background .15s}
+.toggle .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.toggle input:checked + .track{background:var(--ok)}
+.toggle input:checked + .track::after{transform:translateX(18px)}
+.toggle input:focus-visible + .track{outline:2px solid var(--accent);outline-offset:2px}
+#src-body{display:flex;flex-direction:column;gap:16px}
+#src-body[hidden]{display:none}
+
 /* prompt library */
 .libtools{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
 .libtools .field{width:150px}
@@ -257,19 +271,18 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="sub">
           <h3>B. Course and content</h3>
           <div class="grid2">
-            <div class="field"><label for="f-course">Course</label><input id="f-course" value="DPT 641 Musculoskeletal Management II (Spine)"></div>
+            <div class="field"><label for="f-course">Course</label><input id="f-course" placeholder="e.g., DPT 641 Musculoskeletal Management II (Spine)"></div>
             <div class="field"><label for="f-stage">Curriculum stage</label>
-              <select id="f-stage">
+              <select id="f-stage" required>
+                <option value="" selected disabled hidden>Select curriculum stage</option>
                 <option>Year 1 · foundational didactic</option>
-                <option selected>Year 2 · clinical management didactic</option>
+                <option>Year 2 · clinical management didactic</option>
                 <option>Year 3 · final didactic / between clinical rotations</option>
                 <option>Post-didactic · licensure preparation</option>
               </select></div>
-            <div class="field span"><label for="f-topic">Topic</label><input id="f-topic" value="Lumbar radiculopathy and treatment-based classification of low back pain"></div>
+            <div class="field span"><label for="f-topic">Topic</label><input id="f-topic" placeholder="e.g., Lumbar radiculopathy and treatment-based classification of low back pain"></div>
             <div class="field span"><label for="f-obj">Learning objectives <small>(paste from syllabus; optional but recommended)</small></label>
-              <textarea id="f-obj">1. Differentiate lumbar radiculopathy from referred and non-specific low back pain using history and neurological screening.
-2. Select interventions consistent with the APTA Academy of Orthopaedic Physical Therapy low back pain CPG.
-3. Identify red flags that require referral.</textarea></div>
+              <textarea id="f-obj" rows="4" placeholder="e.g.,&#10;1. Differentiate lumbar radiculopathy from referred and non-specific low back pain using history and neurological screening.&#10;2. Select interventions consistent with the low back pain CPG.&#10;3. Identify red flags that require referral."></textarea></div>
           </div>
         </div>
 
@@ -278,10 +291,11 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
           <p class="hint">Categories follow the FSBPT NPTE-PT Test Content Outline. Check the current outline on fsbpt.org before finalizing a blueprint.</p>
           <div class="grid2">
             <div class="field"><label for="f-system">System or non-system area</label>
-              <select id="f-system">
+              <select id="f-system" required>
+                <option value="" selected disabled hidden>Select one</option>
                 <optgroup label="Systems">
                   <option>Cardiovascular and pulmonary</option>
-                  <option selected>Musculoskeletal</option>
+                  <option>Musculoskeletal</option>
                   <option>Neuromuscular and nervous</option>
                   <option>Integumentary</option>
                   <option>Metabolic and endocrine</option>
@@ -300,10 +314,11 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <option>Mixed across areas</option>
               </select></div>
             <div class="field"><label for="f-cat">Content category</label>
-              <select id="f-cat">
+              <select id="f-cat" required>
+                <option value="" selected disabled hidden>Select one</option>
                 <option>Physical therapy examination</option>
                 <option>Foundational sciences</option>
-                <option selected>Evaluation, differential diagnosis, and prognosis</option>
+                <option>Evaluation, differential diagnosis, and prognosis</option>
                 <option>Interventions</option>
                 <option>Mixed across categories</option>
               </select></div>
@@ -313,22 +328,25 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="sub">
           <h3>D. Item specifications</h3>
           <div class="grid3">
-            <div class="field"><label for="f-n">Number of items</label><input id="f-n" type="number" min="1" max="100" value="10"></div>
+            <div class="field"><label for="f-n">Number of items</label><select id="f-n" required>
+                <option value="" selected disabled hidden>Select number</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>75</option><option>100</option></select></div>
             <div class="field"><label for="f-bloom">Cognitive level</label>
-              <select id="f-bloom">
+              <select id="f-bloom" required>
+                <option value="" selected disabled hidden>Select one</option>
                 <option>Remember / understand</option>
                 <option>Apply</option>
-                <option selected>Apply and analyze (mixed)</option>
                 <option>Analyze / evaluate</option>
+                <option>Remember / apply / analyze (mixed)</option>
               </select></div>
             <div class="field"><label for="f-format">Item format</label>
-              <select id="f-format">
-                <option selected>Single vignette items, 4 options</option>
+              <select id="f-format" required>
+                <option value="" selected disabled hidden>Select one</option>
+                <option>Single vignette items, 4 options</option>
                 <option>Vignette clusters (2–4 items per case)</option>
                 <option>Mix of standalone and clusters</option>
               </select></div>
             <div class="field span"><label for="f-setting">Practice settings to sample</label>
-              <input id="f-setting" value="Outpatient orthopedic, acute care, direct access"></div>
+              <input id="f-setting" placeholder="e.g., Outpatient orthopedic, acute care, direct access"></div>
             <div class="field span"><label for="f-extra">Additional parameters <small>(optional)</small></label>
               <textarea id="f-extra" placeholder="e.g., Include one item on a cauda equina red flag. Use SI units for labs. Avoid items answerable by recall of a single fact."></textarea></div>
           </div>
@@ -336,8 +354,10 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         </div>
 
         <div class="sub" id="sources">
-          <h3>E. Pre-item setup: narrow the AI to your sources</h3>
+          <div class="row" style="justify-content:space-between"><h3>E. Pre-item setup: narrow the AI to your sources</h3><span class="opt-pill">Optional</span></div>
           <p class="lead">Items are only as accurate as the material the AI draws from. Upload your own course materials first, so questions, answers, and rationales come from your lectures, the CPGs, and your assigned textbooks instead of the open internet.</p>
+          <label class="toggle" for="f-usesrc"><input type="checkbox" id="f-usesrc"><span class="track" aria-hidden="true"></span><span>Yes, I want the AI to write from materials I upload (NotebookLM or Gemini)</span></label>
+          <div id="src-body" hidden>
 
           <div class="src-grid">
             <div class="src-card">
@@ -361,14 +381,11 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <label class="check"><input type="checkbox" class="src" id="src-lab" value="lab manual or skills checklists"> Lab manual or skills checklists</label>
               </div>
               <div class="field"><label for="f-srcnames">Source titles <small>(optional, one per line)</small></label>
-                <textarea id="f-srcnames">APTA Academy of Orthopaedic PT – Low Back Pain CPG (JOSPT)
-DPT 641 Week 5–6 lecture slides
-Magee, Orthopedic Physical Assessment – lumbar spine chapter</textarea></div>
+                <textarea id="f-srcnames" placeholder="e.g.,&#10;Low back pain CPG (JOSPT)&#10;DPT 641 Week 5–6 lecture slides&#10;Magee, Orthopedic Physical Assessment – lumbar chapter"></textarea></div>
               <div class="field"><label for="f-srcmode">How strictly should the AI stick to them?</label>
                 <select id="f-srcmode">
                   <option value="only" selected>Uploaded sources only (recommended)</option>
                   <option value="first">Sources first; flag anything from outside</option>
-                  <option value="none">I did not upload sources</option>
                 </select></div>
             </div>
           </div>
@@ -388,6 +405,7 @@ Magee, Orthopedic Physical Assessment – lumbar spine chapter</textarea></div>
               </ul>
             </div>
           </div>
+          </div>
         </div>
 
         <div class="sub">
@@ -404,7 +422,7 @@ Magee, Orthopedic Physical Assessment – lumbar spine chapter</textarea></div>
             <div class="seq-step mid" id="seq-2">
               <div class="seq-top"><span class="seq-num">2</span><span class="seq-title">Paste into your AI tool</span></div>
               <ul>
-                <li>Open the notebook you set up in E (NotebookLM or Gemini, signed in with your university account). If you skipped E, use any AI tool your program allows.</li>
+                <li>If you did the optional setup in E, open that notebook (signed in with your university account). Otherwise, open any AI tool your program allows and start a new chat.</li>
                 <li>Paste the prompt and send it.</li>
                 <li>The AI replies with an <b>item plan</b>. Review it, edit anything you want changed, then approve it.</li>
               </ul>
@@ -531,15 +549,16 @@ Magee, Orthopedic Physical Assessment – lumbar spine chapter</textarea></div>
 (function(){
 const $=s=>document.querySelector(s);
 const state={purpose:"course",unlocked:1,step:1,clips:[]};
-const KEY="dpt-item-studio-v1";
+const KEY="dpt-item-studio-v2";
 const fields=["f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
 
-function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
+function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
 
 const v=id=>($("#"+id).value||"").trim();
 const item=()=>v("f-item")||"1";
-const mode=()=>v("f-srcmode")||"only";
+const mode=()=>$("#f-usesrc").checked?(v("f-srcmode")||"only"):"none";
+const sel=(id,fb)=>v(id)||fb;
 function grounding(){
   const m=mode(); if(m==="none")return "";
   const kinds=[...document.querySelectorAll(".src:checked")].map(c=>c.value);
@@ -573,14 +592,14 @@ function starter(){
   return `You are an experienced Doctor of Physical Therapy (DPT) faculty member and a trained NPTE-style item writer. Help me write ${v("f-n")||"10"} single-best-answer multiple-choice questions for ${p.label}.
 
 Course: ${v("f-course")||"[course]"}
-Curriculum stage: ${v("f-stage")}
+Curriculum stage: ${sel("f-stage","not specified")}
 Topic: ${v("f-topic")||"[topic]"}
 ${obj}
 NPTE-PT content outline alignment:
-- System / area: ${v("f-system")}
-- Content category: ${v("f-cat")}
-Target cognitive level (Bloom's): ${v("f-bloom")}
-Item format: ${v("f-format")}
+- System / area: ${sel("f-system","not specified; choose what best fits the topic")}
+- Content category: ${sel("f-cat","not specified; choose what best fits the topic")}
+Target cognitive level (Bloom's): ${sel("f-bloom","a mix of remember, apply, and analyze")}
+Item format: ${sel("f-format","single vignette items, 4 options")}
 Practice settings to sample: ${v("f-setting")||"varied"}
 ${extra}${grounding()}
 Purpose and scope:
@@ -767,7 +786,10 @@ $("#btn-embed").addEventListener("click",()=>copy(embed(),"Canvas embed code"));
 $("#btn-reset-yes").addEventListener("click",()=>{try{localStorage.removeItem(KEY);}catch(e){}location.reload();});
 
 load();
+const syncSrc=()=>{$("#src-body").hidden=!$("#f-usesrc").checked;};
+$("#f-usesrc").addEventListener("change",syncSrc);
 document.querySelectorAll("#purpose .choice").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===state.purpose?"true":"false"));
+syncSrc();
 refresh();
 show(Math.min(state.step,state.unlocked));
 })();
