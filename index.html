@@ -191,6 +191,23 @@ select option{color:var(--ink)}
 .pbtn .d{font-size:.82rem;color:var(--muted);line-height:1.35}
 .pbtn.copied{border-color:var(--ok);background:var(--ok-soft)}
 
+/* expandable prompt cards (Step 2) */
+.plist{display:flex;flex-direction:column;gap:8px}
+.pcard{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.pcard[open]{border-color:var(--ink)}
+.pcard.copied{border-color:var(--ok)}
+.pcard summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+.pcard summary::-webkit-details-marker{display:none}
+.pcard summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:10px}
+.pcard .chev{width:20px;height:20px;color:var(--muted);transition:transform .15s}
+.pcard[open] .chev{transform:rotate(90deg)}
+.pcard .t{font-weight:700;font-size:.98rem;line-height:1.25}
+.pcard .d{font-size:.86rem;color:var(--muted);line-height:1.35}
+.pcard .body{padding:0 14px 14px 46px;display:flex;flex-direction:column;gap:10px}
+.pcard pre{margin:0;padding:12px 14px;background:var(--sunk);border-radius:8px;font:400 .82rem/1.6 var(--mono);white-space:pre-wrap;word-break:break-word}
+@media (max-width:600px){.pcard .body{padding-left:14px}.pcard summary{grid-template-columns:20px minmax(0,1fr)}.pcard summary .btn{grid-column:2;justify-self:start}}
+.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+
 .locked{display:flex;gap:12px;align-items:center;color:var(--muted);background:var(--sunk);border-radius:10px;padding:18px}
 
 /* anatomy strip */
@@ -441,7 +458,11 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
       <section class="panel" id="step-2" hidden aria-labelledby="h1-2">
         <div class="panel-head">
           <div><p class="eyebrow">Step 2</p><h2 id="h1-2">Write and refine items</h2></div>
-          <button type="button" class="btn quiet small" data-goto="1">← Edit setup</button>
+          <div class="head-actions">
+            <button type="button" class="btn quiet small" data-goto="1">← Edit setup</button>
+            <button type="button" class="btn quiet small" id="btn-expand">Expand all</button>
+            <button type="button" class="btn quiet small" id="btn-collapse">Collapse all</button>
+          </div>
         </div>
 
         <div class="anatomy" aria-label="Parts of an item">
@@ -451,7 +472,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
           <div><b>Distractors</b>Plausible errors a student would make</div>
         </div>
 
-        <div class="tip"><b>Training tip</b><span>Set the item number, then click any prompt card to copy it. Use only what helps. A good rhythm: write an item, run the flaw audit, refine, then accept.</span></div>
+        <div class="tip"><b>Training tip</b><span>Set the item number. Open any prompt to read the full wording, then click Copy. Use only what helps. A good rhythm: write an item, run the flaw audit, refine, then accept.</span></div>
 
         <div class="libtools">
           <div class="field"><label for="f-item">Item number</label><input id="f-item" type="number" min="1" value="1"></div>
@@ -688,17 +709,21 @@ Do not change wording that I already approved unless it fixes an error; if you c
 }
 
 /* render library */
+const openSet=new Set();
 function renderLib(){
   const lib=$("#library");lib.innerHTML="";
   L.forEach((g,gi)=>{
     const sec=document.createElement("div");sec.className="group";
     sec.innerHTML=`<h3>${g.h} <span class="tag">${g.tag}</span></h3>`;
-    const wrap=document.createElement("div");wrap.className="pbtns";
+    const wrap=document.createElement("div");wrap.className="plist";
     g.items.forEach((it,ii)=>{
-      const b=document.createElement("button");b.type="button";b.className="pbtn";b.id=`p-${gi}-${ii}`;
-      b.innerHTML=`<span class="t">${it.t.replace("#","#"+item())}</span><span class="d">${it.d}</span>`;
-      b.addEventListener("click",()=>{copy(it.p(),it.t.replace("#","#"+item()));flash(b);});
-      wrap.appendChild(b);
+      const id=`p-${gi}-${ii}`,label=it.t.replace("#","#"+item());
+      const d=document.createElement("details");d.className="pcard";d.id=id;d.open=openSet.has(id);
+      d.innerHTML=`<summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span><span class="t"></span><br><span class="d"></span></span><button type="button" class="btn gold small">Copy</button></summary><div class="body"><pre></pre></div>`;
+      d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=it.d;d.querySelector("pre").textContent=it.p();
+      d.querySelector("summary .btn").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();copy(it.p(),label);flash(d);});
+      d.addEventListener("toggle",()=>{d.open?openSet.add(id):openSet.delete(id);});
+      wrap.appendChild(d);
     });
     sec.appendChild(wrap);lib.appendChild(sec);
   });
@@ -772,6 +797,8 @@ $("#btn-start").addEventListener("click",()=>{copy(starter(),"Starter prompt");
 $("#btn-go2").addEventListener("click",()=>unlock(2));
 $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
+$("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=true));
+$("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=false));
 $("#btn-final").addEventListener("click",()=>copy(finalPrompt(),"Final set prompt"));
 $("#btn-prev").addEventListener("click",()=>{$("#f-item").value=Math.max(1,+item()-1);refresh();});
 $("#btn-next").addEventListener("click",()=>{$("#f-item").value=+item()+1;refresh();});
