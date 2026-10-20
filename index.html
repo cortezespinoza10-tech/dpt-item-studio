@@ -125,6 +125,44 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .prompt[open] summary::after{content:"Hide"}
 .prompt pre{margin:0;padding:14px;font:400 .8rem/1.6 var(--mono);white-space:pre-wrap;word-break:break-word;max-height:340px;overflow:auto;background:var(--surface)}
 
+
+/* starter sequence: copy -> paste -> continue */
+.seq{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1.45fr) 28px minmax(0,1fr);gap:8px;align-items:stretch}
+.seq-step{border:1.5px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--surface);min-width:0}
+.seq-step.mid{background:var(--sunk);border-color:transparent}
+.seq-top{display:flex;align-items:center;gap:10px}
+.seq-num{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;font:700 .95rem var(--display);border:2px solid var(--ink);color:var(--ink)}
+.seq-title{font:700 1.15rem/1.2 var(--display)}
+.seq-step .say{font-size:1.08rem;line-height:1.55}
+.seq-step ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:1.05rem;line-height:1.5}
+.seq-step .btn{justify-content:center;margin-top:auto}
+.seq-arrow{display:grid;place-items:center;color:var(--muted)}
+.seq-step[data-s="done"]{border-color:var(--ok)}
+.seq-step[data-s="done"] .seq-num{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.seq-step[data-s="ready"]{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.seq-step[data-s="ready"] .seq-num{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seq-status{font-size:.92rem;font-weight:600;color:var(--ok)}
+@media (max-width:900px){.seq{grid-template-columns:1fr}.seq-arrow svg{transform:rotate(90deg)}.seq-arrow{height:24px}}
+@media (prefers-reduced-motion:no-preference){.seq-step[data-s="ready"]{animation:nudge 1.6s ease-in-out 2}}
+@keyframes nudge{50%{box-shadow:0 0 0 9px var(--accent-soft)}}
+
+/* pre-item source setup */
+.lead{font-size:1.08rem;line-height:1.55;max-width:68ch}
+.src-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.src-grid{grid-template-columns:1fr}}
+.src-card{border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.src-card h4{margin:0;font:700 1rem var(--display)}
+ol.big{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:1.04rem;line-height:1.5}
+ol.big b{font-weight:700}
+.src-checks{display:grid;grid-template-columns:1fr;gap:8px}
+.shield{border:1.5px solid var(--ok);background:var(--ok-soft);border-radius:10px;padding:18px;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px}
+.shield svg{color:var(--ok)}
+.shield h4{margin:0 0 6px;font:700 1.05rem var(--display)}
+.shield p,.shield li{font-size:1rem;line-height:1.55}
+.shield ul{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.shield .stack{display:flex;flex-direction:column;gap:10px;min-width:0}
+.mono-ex{font-family:var(--mono);font-size:.86em;background:var(--surface);padding:1px 6px;border-radius:4px}
+
 /* prompt library */
 .libtools{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
 .libtools .field{width:150px}
@@ -297,14 +335,87 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
           <label class="check"><input type="checkbox" id="f-rationale" checked> Include rationales for every option (useful for Canvas answer feedback)</label>
         </div>
 
-        <div class="sub">
-          <h3>E. Copy the starter prompt</h3>
-          <details class="prompt"><summary>Starter prompt preview</summary><pre id="pv-start"></pre></details>
-          <div class="row">
-            <button type="button" class="btn gold" id="btn-start">Copy starter prompt</button>
-            <button type="button" class="btn primary" id="btn-go2">Continue to writing items →</button>
+        <div class="sub" id="sources">
+          <h3>E. Pre-item setup: narrow the AI to your sources</h3>
+          <p class="lead">Items are only as accurate as the material the AI draws from. Upload your own course materials first, so questions, answers, and rationales come from your lectures, the CPGs, and your assigned textbooks instead of the open internet.</p>
+
+          <div class="src-grid">
+            <div class="src-card">
+              <h4>Set up a notebook in Google NotebookLM or Gemini</h4>
+              <ol class="big">
+                <li>Go to <b>notebooklm.google.com</b> (or <b>gemini.google.com</b>) and sign in with your <b>university Google account</b>, not a personal Gmail.</li>
+                <li>Create a new notebook named for the course and exam, for example <span class="mono-ex">DPT 641 Exam 2 – Lumbar spine</span>.</li>
+                <li>Add sources: lecture slides and notes (PDF or Google Slides), the CPG PDFs, assigned textbook chapters, and your syllabus objectives.</li>
+                <li>Check that every source finished loading and is selected before you paste the starter prompt.</li>
+              </ol>
+              <p class="hint">NotebookLM answers from the sources you add and links each answer to the passage it came from, which makes it the better fit for exam writing. In Gemini, attach the same files to the chat or to a Gem.</p>
+            </div>
+            <div class="src-card">
+              <h4>What did you upload?</h4>
+              <p class="hint">Your answers are written into the starter prompt so the AI knows what to draw from.</p>
+              <div class="src-checks">
+                <label class="check"><input type="checkbox" class="src" id="src-lec" value="lecture slides and notes" checked> Lecture slides and notes</label>
+                <label class="check"><input type="checkbox" class="src" id="src-cpg" value="clinical practice guidelines" checked> Clinical practice guidelines (CPGs)</label>
+                <label class="check"><input type="checkbox" class="src" id="src-txt" value="assigned textbook chapters" checked> Assigned textbook chapters</label>
+                <label class="check"><input type="checkbox" class="src" id="src-syl" value="course syllabus and objectives"> Syllabus and learning objectives</label>
+                <label class="check"><input type="checkbox" class="src" id="src-lab" value="lab manual or skills checklists"> Lab manual or skills checklists</label>
+              </div>
+              <div class="field"><label for="f-srcnames">Source titles <small>(optional, one per line)</small></label>
+                <textarea id="f-srcnames">APTA Academy of Orthopaedic PT – Low Back Pain CPG (JOSPT)
+DPT 641 Week 5–6 lecture slides
+Magee, Orthopedic Physical Assessment – lumbar spine chapter</textarea></div>
+              <div class="field"><label for="f-srcmode">How strictly should the AI stick to them?</label>
+                <select id="f-srcmode">
+                  <option value="only" selected>Uploaded sources only (recommended)</option>
+                  <option value="first">Sources first; flag anything from outside</option>
+                  <option value="none">I did not upload sources</option>
+                </select></div>
+            </div>
           </div>
-          <p class="hint">Paste the starter prompt into your AI tool. It will propose an item plan first; approve or edit it there, then continue here.</p>
+
+          <div class="shield">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+            <div class="stack">
+              <div>
+                <h4>Use your university Google account to keep course materials protected</h4>
+                <p>When you sign in with your university Google Workspace account and the university has Gemini and NotebookLM turned on, Google states that your chats, uploaded files, and responses are not reviewed by humans and are not used to train AI models. They stay inside the university's Workspace under the controls IT already manages, such as data loss prevention policies. A personal Gmail account does not carry these education terms.</p>
+              </div>
+              <ul>
+                <li><b>Confirm the account:</b> the profile picture in the top-right corner should show your university email before you upload anything. If it shows a personal address, switch accounts.</li>
+                <li><b>Still keep out:</b> student names, grades, accommodations, or any FERPA-protected records. These protections reduce risk; they do not make an AI tool a place for student records.</li>
+                <li><b>Copyright:</b> upload only materials you are licensed to use, and follow your library's terms for e-textbooks. Many CPGs are freely available from the academies and journals.</li>
+                <li><b>Not sure it is enabled?</b> Ask your university IT or Center for Teaching which AI tools are approved for faculty.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub">
+          <h3>F. Start the conversation with your AI tool</h3>
+          <details class="prompt"><summary>Starter prompt preview</summary><pre id="pv-start"></pre></details>
+          <div class="seq" aria-label="Three steps to start">
+            <div class="seq-step" id="seq-1" data-s="ready">
+              <div class="seq-top"><span class="seq-num">1</span><span class="seq-title">Copy</span></div>
+              <p class="say">Copy the starter prompt built from your setup above.</p>
+              <button type="button" class="btn gold" id="btn-start">Copy starter prompt</button>
+              <span class="seq-status" id="seq-1-status" hidden>Copied to your clipboard</span>
+            </div>
+            <div class="seq-arrow" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            <div class="seq-step mid" id="seq-2">
+              <div class="seq-top"><span class="seq-num">2</span><span class="seq-title">Paste into your AI tool</span></div>
+              <ul>
+                <li>Open the notebook you set up in E (NotebookLM or Gemini, signed in with your university account). If you skipped E, use any AI tool your program allows.</li>
+                <li>Paste the prompt and send it.</li>
+                <li>The AI replies with an <b>item plan</b>. Review it, edit anything you want changed, then approve it.</li>
+              </ul>
+            </div>
+            <div class="seq-arrow" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            <div class="seq-step" id="seq-3">
+              <div class="seq-top"><span class="seq-num">3</span><span class="seq-title">Come back here</span></div>
+              <p class="say">Once the plan is approved, continue to Step 2 for the prompts that write and refine each item.</p>
+              <button type="button" class="btn primary" id="btn-go2">Continue to writing items →</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -421,13 +532,31 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
 const $=s=>document.querySelector(s);
 const state={purpose:"course",unlocked:1,step:1,clips:[]};
 const KEY="dpt-item-studio-v1";
-const fields=["f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
+const fields=["f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
 
-function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;}catch(e){}}
+function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
 
 const v=id=>($("#"+id).value||"").trim();
 const item=()=>v("f-item")||"1";
+const mode=()=>v("f-srcmode")||"only";
+function grounding(){
+  const m=mode(); if(m==="none")return "";
+  const kinds=[...document.querySelectorAll(".src:checked")].map(c=>c.value);
+  const names=v("f-srcnames")?"\nSource titles:\n"+v("f-srcnames").split("\n").filter(x=>x.trim()).map(x=>"- "+x.trim()).join("\n"):"";
+  const list=kinds.length?kinds.join(", "):"the uploaded files";
+  const rule=m==="only"
+   ?`- Write every stem, key, distractor rationale, and clinical detail using only information in these sources.
+- If a fact you need is not in the sources, do not supply it from general knowledge. Write "Not in sources" and tell me what I should upload.`
+   :`- Use these sources first for every stem, key, and rationale.
+- If you must use outside knowledge, label that statement [outside source] so I can verify it.`;
+  return `\nSource grounding:
+I have uploaded ${list} to this notebook.${names}
+${rule}
+- Cite the source and page, slide, or section that supports each key.
+- Where the sources disagree with each other, tell me instead of choosing silently.
+`;
+}
 
 const purposeText={
   course:{label:"a course exam",frame:"Keep every item within the scope of the listed objectives and what students in this course have been taught. Difficulty should discriminate mastery of this course's content, not knowledge from later courses."},
@@ -453,7 +582,7 @@ NPTE-PT content outline alignment:
 Target cognitive level (Bloom's): ${v("f-bloom")}
 Item format: ${v("f-format")}
 Practice settings to sample: ${v("f-setting")||"varied"}
-${extra}
+${extra}${grounding()}
 Purpose and scope:
 ${p.frame}
 
@@ -477,7 +606,7 @@ B.
 C.
 D.
 Key:${rat}
-- Reference: CPG or textbook source, marked [verify] if uncertain`;
+- Reference: ${mode()==="none"?"CPG or textbook source, marked [verify] if uncertain":"uploaded source with page, slide, or section"}`;
 }
 
 const L=[
@@ -502,7 +631,7 @@ const L=[
  ]},
  {h:"Audit",tag:"quality",items:[
   {t:"Item-writing flaw audit",d:"Cueing, absolutes, negatives",p:()=>`Audit item ${item()} for item-writing flaws: grammatical cues, absolute terms, longest-correct-answer, convergence, word repeats between stem and key, negative stems, "all/none of the above," implausible distractors, and more than one defensible answer. Report each flaw found and give a corrected version.`},
-  {t:"Clinical accuracy check",d:"Against current CPGs",p:()=>`Check the clinical accuracy of item ${item()} and its rationale against current APTA academy clinical practice guidelines and standard DPT references. Flag anything outdated, contested, or where practice varies. Name the guideline or source for each claim and mark [verify] where you are not certain.`},
+  {t:"Clinical accuracy check",d:"Against current CPGs",p:()=>(mode()==="none"?"":`Using the uploaded sources first, with page or section citations: `)+`Check the clinical accuracy of item ${item()} and its rationale against current APTA academy clinical practice guidelines and standard DPT references. Flag anything outdated, contested, or where practice varies. Name the guideline or source for each claim and mark [verify] where you are not certain.`},
   {t:"NPTE alignment check",d:"Area, category, entry-level",p:()=>`Confirm the NPTE-PT system or area and content category for item ${item()}. Is this content appropriate for entry-level practice? Does it test clinical decision-making rather than isolated recall? Suggest changes if the alignment is weak.`},
   {t:"Bloom's level check",d:"Does it test what we claim?",p:()=>`What cognitive level does item ${item()} actually require? Explain your reasoning. If it does not match the intended level, suggest a revision that does.`},
   {t:"Scope check",d:"Inside the course objectives?",p:()=>`Does item ${item()} test content within this course's learning objectives and what students at this stage have been taught? Name the objective it maps to. If it reaches beyond scope, revise it.`},
@@ -618,7 +747,9 @@ document.querySelectorAll("#purpose .choice").forEach(b=>b.addEventListener("cli
 }));
 document.addEventListener("input",e=>{if(e.target.matches("input,select,textarea"))refresh();});
 document.addEventListener("change",e=>{if(e.target.matches("input,select,textarea"))refresh();});
-$("#btn-start").addEventListener("click",()=>copy(starter(),"Starter prompt"));
+$("#btn-start").addEventListener("click",()=>{copy(starter(),"Starter prompt");
+  $("#seq-1").dataset.s="done";$("#seq-1-status").hidden=false;$("#btn-start").textContent="Copy again";
+  $("#seq-3").dataset.s="ready";});
 $("#btn-go2").addEventListener("click",()=>unlock(2));
 $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
