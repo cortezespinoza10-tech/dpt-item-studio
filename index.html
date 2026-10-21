@@ -447,6 +447,13 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <option>Vignette clusters (2–4 items per case)</option>
                 <option>Mix of standalone and clusters</option>
               </select></div>
+            <div class="field span"><label for="f-media">Image and video items <small>(the 2024 NPTE includes items with a graphic or a short video)</small></label>
+              <select id="f-media">
+                <option value="none" selected>Text only</option>
+                <option value="image">Include some image items (photo, radiograph, graph, ECG strip)</option>
+                <option value="video">Include some video items (clip of 10 seconds or less)</option>
+                <option value="both">Include image and video items</option>
+              </select></div>
             <div class="field span"><label for="f-length">Item length</label>
               <select id="f-length">
                 <option value="concise" selected>Concise: stem 40–70 words, options 1–8 words (recommended)</option>
@@ -633,6 +640,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
 
         <div class="sub">
           <h3>Format for Canvas</h3>
+          <div class="tip"><b>Image and video items</b><span>After importing, open each media item in the Canvas quiz editor and insert the image or video where the stem shows [IMAGE] or [VIDEO]. Upload media to Canvas or Canvas Studio, not a public link. Use only photos and clips of consenting actors or students, never identifiable patients, and add the text alternative as the image's alt text.</span></div>
           <div class="tip"><b>Which path?</b><span>Most faculty use QTI import: it brings in every item, its key, and feedback at once. Pasting by hand works for a short quiz.</span></div>
           <div class="pbtns" id="canvas-btns"></div>
           <details class="prompt"><summary>How to import a QTI file into Canvas</summary><pre>1. Paste the "QTI via text2qti" prompt after your final set. Save the AI's
@@ -703,7 +711,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
 const $=s=>document.querySelector(s);
 const state={purpose:"course",unlocked:1,step:1,clips:[]};
 const KEY="dpt-item-studio-v2";
-const fields=["f-cdesc","f-length","x-part","x-action","x-input","f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
+const fields=["f-media","f-cdesc","f-length","x-part","x-action","x-input","f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
 
 function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.xkeep=$("#x-keep").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if("xkeep" in d)$("#x-keep").checked=d.xkeep;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
@@ -794,6 +802,24 @@ const LEN={
   extended:{stem:"100–150 words",lead:"one sentence of 20 words or fewer",opt:"15 words or fewer each",rat:"two sentences for the key and one sentence per distractor"}
 };
 const len=()=>LEN[v("f-length")]||LEN.concise;
+const MEDIA_SPEC=`Media specification:
+- Type: photo, radiograph or other image, graph or ECG strip, or video of 10 seconds or less
+- What it must show: the specific clinical finding the student has to interpret
+- How to capture it: patient position, camera angle and distance; for video, the movement shown and its length. Video should make sense with the sound off.
+- What it must not show: faces or anything that identifies a person, and anything that gives away the key
+- Text alternative: one or two sentences describing what is visible, for students who use a screen reader`;
+const MEDIA_RULES=`- The stem must not describe the finding the media shows. A student who cannot see the media should not be able to answer.
+- Pick findings that are best judged by looking: gait deviations, movement patterns and compensations, posture, wound appearance, edema, skin changes, joint alignment, radiograph findings, ECG rhythms, vital sign trends, outcome measure graphs.
+- Place "[IMAGE]" or "[VIDEO]" in the stem where the media appears, and give a media specification under the item so faculty can photograph, film, or find a licensed image.`;
+function mediaBlock(){
+  const m=v("f-media"); if(!m||m==="none")return "";
+  const kind={image:"image items",video:"video items",both:"image or video items"}[m];
+  return `\nMedia items:
+- Make about one in four items ${kind}, choosing topics where seeing the patient is the point of the question.
+${MEDIA_RULES}
+- Add a Media column to the plan table (None, Image, or Video).
+`;
+}
 const RETURN_LINE=()=>`Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item ${item()}.`;
 const LOOP=()=>`\n\nWhen you finish what this message asks, stop. Do not go on to any other item. End your reply with the Studio line from my first message.`;
 
@@ -821,7 +847,7 @@ NPTE-PT content outline alignment:
 Target cognitive level (Bloom's): ${sel("f-bloom","a mix of remember, apply, and analyze")}
 Item format: ${sel("f-format","single vignette items, 4 options")}
 Practice settings to sample: ${v("f-setting")||"varied"}
-${extra}${grounding()}
+${extra}${grounding()}${mediaBlock()}
 Purpose and scope:
 ${p.frame}
 
@@ -858,7 +884,7 @@ B.
 C.
 D.
 Key:${rat}
-- Reference: ${mode()==="none"?"CPG or textbook source, marked [verify] if uncertain":"uploaded source with page, slide, or section"}`;
+- Reference: ${mode()==="none"?"CPG or textbook source, marked [verify] if uncertain":"uploaded source with page, slide, or section"}${v("f-media")&&v("f-media")!=="none"?"\nFor an image or video item, add the media specification:\n"+MEDIA_SPEC:""}`;
 }
 
 const L=[
@@ -881,6 +907,23 @@ const L=[
   {t:"Strengthen distractors",d:"Built from real student errors",p:()=>`Improve the distractors in item ${item()}. Each one should reflect a specific, common student misconception or reasoning error in physical therapy practice. For each distractor, name the error it represents.`},
   {t:"Make options homogeneous",d:"Length, grammar, category",p:()=>`Revise the options in item ${item()} so all four are similar in length, grammatical structure, and category (for example, all interventions, or all diagnoses). Make sure the key does not stand out.`},
   {t:"Balance key positions",d:"Across the items so far",p:()=>`List the key letter for every item written so far. If any letter is over- or under-used, reorder options in specific items to balance the distribution, and tell me which items changed.`}
+ ]},
+ {h:"Images and video",tag:"2024 NPTE media",items:[
+  {t:"Convert item # to an image item",d:"Photo, radiograph, graph, or ECG",p:()=>`Convert item ${item()} into an image item. Choose the image that a physical therapist would actually look at to make this decision.
+${MEDIA_RULES}
+Show the full revised item, then:
+${MEDIA_SPEC}`},
+  {t:"Convert item # to a video item",d:"A clip of 10 seconds or less",p:()=>`Convert item ${item()} into a video item built on a clip of 10 seconds or less, such as a gait cycle, a transfer, a functional movement, or a special test being performed.
+${MEDIA_RULES}
+- Write a short shot list for the clip: who is in it (a consenting actor or student, not a patient), start and end position, camera angle, and what happens second by second.
+Show the full revised item, then:
+${MEDIA_SPEC}`},
+  {t:"Write an item from my image or video",d:"Attach your own media in the AI chat",p:()=>`I have attached an image or video to this message. Do not write an item yet.
+1. Describe what you see in clinical terms, and list anything you are unsure about.
+2. Stop and wait for me to confirm or correct your description.
+After I confirm, write item ${item()} around it, following the standards, length limits, and format from my first message.
+${MEDIA_RULES.replace(/\n- Place[\s\S]*$/,"")}`},
+  {t:"Media necessity check",d:"Does the item need the media?",p:()=>`Check item ${item()}: could a student answer it correctly from the stem and options alone, without the image or video? If yes, remove the clues from the stem or options that make the media unnecessary, and show the revised item. Also check that the text alternative describes what is visible without naming the answer.`}
  ]},
  {h:"Audit",tag:"quality",items:[
   {t:"Item-writing flaw audit",d:"Cueing, absolutes, negatives",p:()=>`Audit item ${item()} for item-writing flaws: grammatical cues, absolute terms, longest-correct-answer, convergence, word repeats between stem and key, negative stems, "all/none of the above," implausible distractors, and more than one defensible answer. Report each flaw found and give a corrected version.`},
@@ -963,7 +1006,7 @@ Output rules:
 18. Key: A, B, C, or D
 19. Rationale for the key and each distractor
 20. Source / reference with page, slide, or section
-Use the exact wording above for columns 7, 8, and 9 so the spreadsheet dropdowns accept the values.`;
+Use the exact wording above for columns 7, 8, and 9 so the spreadsheet dropdowns accept the values.\n\nThen, below the code block, list each image or video item by its row number with its media type and media specification, so I can fill in the Media columns of the spreadsheet by hand.`;
 }
 function finalPrompt(){
   return `We are finished writing items. Compile the final set:
