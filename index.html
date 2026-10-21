@@ -884,23 +884,24 @@ async function readPdf(buf){
   const pages=[];
   for(let i=1;i<=doc.numPages;i++){
     const tc=await (await doc.getPage(i)).getTextContent();
-    let out="",lastY=null;
-    for(const it of tc.items){
-      const y=it.transform?it.transform[5]:null;
-      if(lastY!==null&&y!==null&&Math.abs(y-lastY)>2&&!out.endsWith("\n"))out+="\n";
-      out+=it.str; if(it.hasEOL)out+="\n"; if(y!==null)lastY=y;
-    }
-    pages.push(out.replace(/[ \t]+\n/g,"\n").trim());
+    pages.push({items:tc.items.filter(it=>it.str&&it.transform).map(it=>({str:it.str,x:it.transform[4],y:it.transform[5],w:it.width||0}))});
   }
-  return {text:pages.map((t,i)=>`[Page ${i+1}]\n${t}`).join("\n\n"),plain:pages.join("\n"),pages:doc.numPages};
+  const lines=buildPdfLines(pages);
+  const byPage=[];lines.forEach(l=>{(byPage[l.page]=byPage[l.page]||[]).push(l.text);});
+  const pageText=pages.map((_,i)=>(byPage[i]||[]).join("\n"));
+  return {text:pageText.map((t,i)=>`[Page ${i+1}]\n${t}`).join("\n\n"),plain:pageText.join("\n"),pages:doc.numPages,lines};
 }
 async function readFile(file){
   const ext=(file.name.split(".").pop()||"").toLowerCase();
   if(ext==="pdf")return readPdf(await file.arrayBuffer());
   if(ext==="docx"){
     for(const src of LIBS.docx)await loadScript(src);
-    const r=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
-    const t=r.value.replace(/\n{3,}/g,"\n\n").trim(); return {text:t,plain:t,pages:null};
+    const ab=await file.arrayBuffer();
+    const r=await window.mammoth.extractRawText({arrayBuffer:ab});
+    const t=r.value.replace(/\n{3,}/g,"\n\n").trim();
+    let lines=null;
+    try{const h=await window.mammoth.convertToHtml({arrayBuffer:ab});lines=htmlToLines(h.value);}catch(e){}
+    return {text:t,plain:t,pages:null,lines};
   }
   if(ext==="txt"||ext==="md"){const t=(await file.text()).trim();return {text:t,plain:t,pages:null};}
   if(ext==="doc")throw new Error("Older .doc files can't be read here. Save it as .docx or PDF and try again.");
@@ -917,32 +918,127 @@ function wireDrop(dropId,inputId,onFiles){
 }
 
 /* syllabus: find the objectives section */
-const OBJ_HEAD=/^\s*(?:[ivx\d]+[.)]\s*)?(?:(?:student|course|specific|expected|terminal|instructional)\s+)*(?:learning\s+)?(?:objectives|outcomes)\b/i;
-const NEXT_HEAD=/^\s*(?:[ivx\d]+[.)]\s*)?(?:required|recommended|textbooks?|texts?|readings?|course (?:description|schedule|requirements|policies|materials|format)|grading|evaluation|assessment|methods|teaching|instructional methods|schedule|attendance|policies|academic|instructor|faculty|office hours|course calendar|topical outline|content outline|outline|assignments|examinations?|exams?|university|disability|accommodations|apa|professional behaviors?)\b/i;
+/*OBJ-START*/
+const OBJ_HEAD=/^\s*(?:[ivx\d]+[.)]\s*)?(?:(?:student|course|specific|expected|terminal|instructional|program)\s+)*(?:learning\s+)?(?:objectives?|outcomes?)\b/i;
+const NEXT_HEAD=/^\s*(?:[ivx\d]+[.)]\s*)?(?:required|recommended|textbooks?|texts?|readings?|course (?:description|schedule|requirements|policies|materials|format)|grading|evaluation|methods|teaching|instructional methods|schedule|attendance|policies|academic|instructor|faculty|office hours|course calendar|topical outline|content outline|outline|assignments|examinations?|university|disability|accommodations|apa|professional behaviors?)\b/i;
 const ITEM=/^\s*(?:\d{1,2}[.)]|[a-z][.)]|[•●▪◦\-–*]|\(\d{1,2}\)|\(?[a-z]\))\s+/i;
-const VERB=/^(?:describe|explain|identify|perform|apply|analy[sz]e|differentiate|select|demonstrate|interpret|discuss|compare|contrast|evaluate|design|develop|integrate|document|recognize|determine|justify|execute|formulate|plan|implement|educate|communicate|assess|utilize|use|value|display|articulate|critique|synthesize|list|define|examine|prescribe|modify|screen|administer|summarize|appraise|construct|instruct|distinguish|classify|calculate|predict|propose|manage)\b/i;
-function findObjectives(plain){
-  const lines=plain.split("\n").map(l=>l.replace(/\s+/g," ").trim()).filter(l=>l&&!/^\[Page \d+\]$/.test(l));
+const VERB=/^(?:describe|explain|identify|perform|apply|analy[sz]e|differentiate|select|demonstrate|interpret|discuss|compare|contrast|evaluate|design|develop|integrate|document|recognize|determine|justify|execute|formulate|plan|implement|educate|communicate|assess|utilize|use|value|display|articulate|critique|synthesize|list|define|examine|prescribe|modify|screen|administer|summarize|appraise|construct|instruct|distinguish|classify|calculate|predict|propose|manage|exhibit|adapt|employ|incorporate|collaborate|reflect|advocate|recommend|choose|relate)\b/i;
+const norm=t=>t.toLowerCase().replace(/\d+/g,"#").replace(/\s+/g," ").trim();
+
+/* Group PDF text runs into lines, and each line into cells by horizontal gaps. */
+function buildPdfLines(pages){
+  const all=[];
+  pages.forEach((pg,pi)=>{
+    const its=pg.items.filter(t=>t.str.trim()).sort((a,b)=>b.y-a.y||a.x-b.x);
+    const rows=[];
+    for(const it of its){
+      const r=rows.find(r=>Math.abs(r.y-it.y)<=2.5);
+      if(r)r.items.push(it);else rows.push({y:it.y,items:[it]});
+    }
+    rows.sort((a,b)=>b.y-a.y).forEach(r=>{
+      r.items.sort((a,b)=>a.x-b.x);
+      const cells=[];let cur=null,end=0;
+      for(const it of r.items){
+        const gap=it.x-end;
+        if(!cur||gap>9){cur={x:it.x,text:it.str.trim()};cells.push(cur);}
+        else cur.text+=(gap>1.2&&!/\s$/.test(cur.text)?" ":"")+it.str.trim();
+        end=Math.max(end,it.x+(it.w||it.str.length*4.5));
+      }
+      all.push({page:pi,y:r.y,cells,text:cells.map(c=>c.text).join("   ")});
+    });
+  });
+  /* drop running headers, footers, and page numbers */
+  const pageCount=pages.length,seen={};
+  if(pageCount>1){
+    const byPage={};all.forEach(l=>{(byPage[l.page]=byPage[l.page]||[]).push(l);});
+    Object.values(byPage).forEach(ls=>{const edge=[...ls.slice(0,3),...ls.slice(-3)];new Set(edge.map(l=>norm(l.text))).forEach(k=>{seen[k]=(seen[k]||0)+1;});});
+  }
+  return all.filter(l=>!/^(?:page\s*)?\d+(?:\s*(?:of|\/)\s*\d+)?$/i.test(l.text.trim())&&!(pageCount>1&&seen[norm(l.text)]>=2&&!OBJ_HEAD.test(l.cells[0].text)&&l.cells.length<3&&!VERB.test(l.cells[0].text.replace(ITEM,""))));
+}
+
+/* Word documents: one line per paragraph, one line per table row with a cell per column. */
+function htmlToLines(html){
+  const doc=new DOMParser().parseFromString(html,"text/html"),out=[];let y=0;
+  const walk=el=>{
+    for(const n of el.children){
+      if(n.tagName==="TABLE"){
+        n.querySelectorAll("tr").forEach(tr=>{
+          const cells=[...tr.children].map((td,ci)=>{td.querySelectorAll("p,li,br,div").forEach(e=>e.after(" "));return {x:ci*100,text:td.textContent.replace(/\s+/g," ").trim()};}).filter(c=>c.text);
+          if(cells.length)out.push({page:0,y:(y-=30),cells,text:cells.map(c=>c.text).join("   "),row:true});
+        });
+      }else if(/^(P|H\d|LI)$/.test(n.tagName)){
+        const t=n.textContent.replace(/\s+/g," ").trim();
+        if(t)out.push({page:0,y:(y-=12),cells:[{x:n.tagName==="LI"?20:0,text:(n.tagName==="LI"?"• ":"")+t}],text:t});
+        if(n.tagName==="LI"&&n.querySelector("ul,ol"))walk(n);
+      }else walk(n);
+    }
+  };
+  walk(doc.body);return out;
+}
+const textToLines=plain=>plain.split("\n").map(l=>l.replace(/\s+/g," ").trim()).filter(l=>l&&!/^\[Page \d+\]$/.test(l)).map((t,i)=>({page:0,y:-i*12,cells:[{x:0,text:t}],text:t}));
+
+function findObjectives(lines){
+  if(typeof lines==="string")lines=textToLines(lines);
   let best=null;
   for(let i=0;i<lines.length;i++){
-    if(!OBJ_HEAD.test(lines[i])||lines[i].length>140)continue;
-    const items=[];let cur=null;
-    for(let j=i+1;j<lines.length&&j<i+120;j++){
-      const l=lines[j];
-      if(NEXT_HEAD.test(l)&&l.length<70&&!ITEM.test(l))break;
-      if(OBJ_HEAD.test(l)&&l.length<70&&items.length)break;
-      if(ITEM.test(l)){if(cur)items.push(cur);cur=l.replace(ITEM,"").trim();}
-      else if(VERB.test(l)&&(!cur||/[.;:]$/.test(cur))){if(cur)items.push(cur);cur=l;}
-      else if(cur){cur+=" "+l;}
-      else if(/^(upon|by the end|at the (?:end|conclusion)|after completing|students will|the student will|on completion)/i.test(l)){continue;}
-      else if(items.length===0&&l.length>40){cur=l;}
+    const hl=lines[i],hc=hl.cells.find(c=>OBJ_HEAD.test(c.text)&&c.text.length<140);
+    if(!hc)continue;
+    const leftX=hl.cells[0].x,headKey=norm(hl.text);
+    /* region: until a new section heading at the left margin */
+    const region=[];
+    for(let j=i+1;j<lines.length&&j<i+900;j++){
+      const l=lines[j],t=l.text,c0=l.cells[0].text;
+      if(norm(t)===headKey)continue;
+      const isHead=l.cells.length===1&&c0.length<70&&!ITEM.test(c0)&&l.cells[0].x<=leftX+8&&/^[A-Z0-9IVX]/.test(c0)&&!/[,;]$/.test(c0);
+      if(isHead&&NEXT_HEAD.test(c0))break;
+      if(isHead&&OBJ_HEAD.test(c0)&&c0.length<45&&region.length>3)break;
+      region.push(l);
+    }
+    if(!region.length)continue;
+    /* which column holds the objectives */
+    let lo=-1e9,hi=1e9,table=false;
+    if(hl.cells.length>1){
+      const k=hl.cells.indexOf(hc);lo=hc.x-15;hi=k+1<hl.cells.length?hl.cells[k+1].x-4:1e9;table=true;
+    }else{
+      const multi=region.filter(l=>l.cells.length>1);
+      if(multi.length>=2){
+        const buckets={};
+        multi.forEach(l=>l.cells.forEach(c=>{const b=Math.round(c.x/12);(buckets[b]=buckets[b]||{x:c.x,n:0,len:0,v:0});const B=buckets[b];B.x=Math.min(B.x,c.x);B.n++;B.len+=c.text.length;if(VERB.test(c.text.replace(ITEM,"")))B.v++;}));
+        const bs=Object.values(buckets).sort((a,b)=>a.x-b.x);
+        const pick=bs.reduce((a,b)=>(b.v*1000+b.len)>(a.v*1000+a.len)?b:a);
+        if(pick.v>=2){
+          lo=pick.x-6;const nxt=bs.find(b=>b.x>pick.x+20&&b.n>=2);hi=nxt?nxt.x-4:1e9;table=true;
+          /* skip the table's own header row */
+          const hdrIdx=region.findIndex(l=>l.cells.length>1);
+          if(hdrIdx>=0){const hk=norm(region[hdrIdx].text);for(let r=region.length-1;r>=0;r--)if(norm(region[r].text)===hk)region.splice(r,1);}
+        }
+      }
+    }
+    const gaps=[];for(let r=1;r<region.length;r++){const a=region[r-1],b=region[r];if(a.page===b.page)gaps.push(a.y-b.y);}
+    gaps.sort((a,b)=>a-b);const med=gaps.length?gaps[Math.floor(gaps.length/2)]:12;
+    const items=[];let cur=null,prev=null;
+    for(const l of region){
+      const col=l.cells.filter(c=>c.x>=lo&&c.x<hi).map(c=>c.text).join(" ").trim();
+      const leftCell=l.cells.some(c=>c.x<lo&&c.text.trim());
+      if(!col){prev=l;continue;}
+      if(OBJ_HEAD.test(col)&&col.length<60){prev=l;continue;}
+      const gapBreak=table&&prev&&prev.page===l.page&&(prev.y-l.y)>med*1.6;
+      let start=false,text=col;
+      if(ITEM.test(col)){start=true;text=col.replace(ITEM,"");}
+      else if(l.row||(table&&leftCell)||gapBreak)start=true;
+      else if(VERB.test(col)&&(!cur||/[.;:]$/.test(cur)||(table&&(!prev||prev.page!==l.page||(prev.y-l.y)>med*1.25))))start=true;
+      else if(!cur&&!table&&/^(upon|by the end|at the (?:end|conclusion)|after completing|students will|the student will|on completion)/i.test(col)){prev=l;continue;}
+      else if(!cur&&col.length<=40){prev=l;continue;}
+      if(start||!cur){if(cur)items.push(cur);cur=text;}else cur+=" "+text;
+      prev=l;
     }
     if(cur)items.push(cur);
-    const clean=items.map(t=>t.replace(/\s+/g," ").trim()).filter(t=>t.length>12&&t.length<600);
+    const clean=items.map(t=>t.replace(/\s+/g," ").replace(/\s+([,.;:])/g,"$1").trim()).filter(t=>t.length>12&&t.length<800&&!/^(upon|by the end|at the (?:end|conclusion)|after completing|students will|the student will)/i.test(t));
     if(clean.length&&(!best||clean.length>best.length))best=clean;
   }
   return best;
 }
+/*OBJ-END*/
 let sylText="";
 async function onSyllabus(files){
   const f=files[0],st=$("#syl-status");
@@ -950,7 +1046,7 @@ async function onSyllabus(files){
   try{
     const r=await readFile(f);sylText=r.plain;
     if(words(r.plain)<20){st.innerHTML=`<span class="err">No readable text in ${esc(f.name)}. It may be a scanned PDF. Paste the objectives below instead.</span>`;return;}
-    const objs=findObjectives(r.plain);
+    const objs=findObjectives(r.lines&&r.lines.length?r.lines:r.plain);
     if(objs){
       $("#syl-found").value=objs.map((o,i)=>`${i+1}. ${o}`).join("\n");
       $("#syl-found-label").textContent=`Found ${objs.length} objective${objs.length>1?"s":""} in ${f.name}. Review and edit before using them.`;
