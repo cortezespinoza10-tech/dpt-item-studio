@@ -367,7 +367,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="sub">
           <h3>B. Course and content</h3>
           <div class="grid2">
-            <div class="field"><label for="f-course">Course <small>(start typing a code or title)</small></label><input id="f-course" list="course-list" autocomplete="off" placeholder="e.g., DPT 641 Musculoskeletal Management II (Spine)"><datalist id="course-list"></datalist></div>
+            <div class="field"><label for="f-course">Course <small>(start typing a code or title)</small></label><input id="f-course" list="course-list" autocomplete="off" placeholder="e.g., PT 705 Orthopedics I"><datalist id="course-list"></datalist></div>
             <div class="field"><label for="f-stage">Curriculum stage</label>
               <select id="f-stage" required>
                 <option value="" selected disabled hidden>Select curriculum stage</option>
@@ -378,7 +378,6 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
               </select></div>
             <div class="course-card" id="course-card" hidden>
               <span class="ct" id="cc-title"></span>
-              <span id="cc-desc"></span>
               <span class="cm" id="cc-meta"></span>
             </div>
             <div class="field span"><label for="f-cdesc">Course description <small>(fills in when you pick a course from the list; edit freely)</small></label>
@@ -731,25 +730,57 @@ ${rule}
 `;
 }
 
-/* DPT curriculum course list.
+/* APU DPT curriculum. Descriptions summarized from the APU catalog (catalog.apu.edu, Department of Physical Therapy).
    One entry per course. stage must match a Curriculum stage option exactly; system and cat must
    match the NPTE dropdown options exactly, or be left as "". */
 const COURSES=[
-  // {code:"DPT 641", title:"Musculoskeletal Management II (Spine)", stage:"Year 2 · clinical management didactic", system:"Musculoskeletal", cat:"", desc:"Examination, evaluation, and intervention for spinal conditions."},
+  {"code": "PT 701", "title": "Human Anatomy", "units": 8, "stage": "Year 1 · foundational didactic", "term": "Year 1 Spring", "system": "Musculoskeletal", "cat": "Foundational sciences", "desc": "Clinically oriented human anatomy taught by region, with lecture and cadaver dissection."},
+  {"code": "PT 702", "title": "Clinical Skills I", "units": 6, "stage": "Year 1 · foundational didactic", "term": "Year 1 Spring", "system": "Musculoskeletal", "cat": "Physical therapy examination", "desc": "Foundational examination skills for the extremities and spine: ROM, manual muscle testing, neurological screening, palpation, kinesiology, and gait."},
+  {"code": "PT 706", "title": "Seminar I", "units": 2, "stage": "Year 1 · foundational didactic", "term": "Year 1 Spring", "system": "Professional responsibilities", "cat": "Mixed across categories", "desc": "Introduction to the physical therapy profession: its history, legal issues, practice settings, and professional responsibility."},
+  {"code": "PT 707", "title": "Professional Relationships", "units": 2, "stage": "Year 1 · foundational didactic", "term": "Year 1 Spring", "system": "Professional responsibilities", "cat": "Mixed across categories", "desc": "The physical therapist as health educator, with interpersonal and communication skills for patient care."},
+  {"code": "PT 724", "title": "PT Clinical Skills II", "units": 3, "stage": "Year 1 · foundational didactic", "term": "Year 1 Summer", "system": "Therapeutic modalities", "cat": "Interventions", "desc": "Physical agents across the visual and electromagnetic spectrum and their therapeutic use."},
+  {"code": "PT 754", "title": "General Medicine", "units": 3, "stage": "Year 1 · foundational didactic", "term": "Year 1 Summer", "system": "System interactions", "cat": "Evaluation, differential diagnosis, and prognosis", "desc": "Management of acute, chronic, and terminal general medicine patients, with lab-based clinical reasoning."},
+  {"code": "PT 726", "title": "PT Clinical Skills III", "units": 1, "stage": "Year 1 · foundational didactic", "term": "Year 1 Summer", "system": "Safety and protection", "cat": "Interventions", "desc": "Assistive device selection, bed mobility, and transfers, with emphasis on patient and therapist safety."},
+  {"code": "PT 755", "title": "Research Methods in Physical Therapy", "units": 3, "stage": "Year 1 · foundational didactic", "term": "Year 1 Summer", "system": "Research and evidence-based practice", "cat": "Mixed across categories", "desc": "Research concepts, major study designs, and statistical methods used in physical therapy literature."},
+  {"code": "PT 703", "title": "Clinical Neuroscience", "units": 6, "stage": "Year 1 · foundational didactic", "term": "Year 1 Fall", "system": "Neuromuscular and nervous", "cat": "Foundational sciences", "desc": "Anatomy and physiology of the central and peripheral nervous systems, neuromuscular function, and linking pathology to neurological signs and diagnostic tests."},
+  {"code": "PT 705", "title": "Orthopedics I", "units": 6, "stage": "Year 1 · foundational didactic", "term": "Year 1 Fall", "system": "Musculoskeletal", "cat": "Mixed across categories", "desc": "Examination and rehabilitation of orthopedic conditions, with emphasis on the spine and lower quarter."},
+  {"code": "PT 752", "title": "Cardiopulmonary Patient Management", "units": 3, "stage": "Year 1 · foundational didactic", "term": "Year 1 Fall", "system": "Cardiovascular and pulmonary", "cat": "Mixed across categories", "desc": "Cardiac and pulmonary pathology and clinical decision-making through patient cases."},
+  {"code": "PT 704", "title": "Neurorehabilitation", "units": 8, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Spring", "system": "Neuromuscular and nervous", "cat": "Mixed across categories", "desc": "Differential diagnosis, functional evaluation, and treatment of adults with neurological conditions, with lab-based skill practice."},
+  {"code": "PT 748", "title": "Orthopedics II", "units": 6, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Spring", "system": "Musculoskeletal", "cat": "Mixed across categories", "desc": "Examination and rehabilitation of orthopedic conditions of the shoulder, elbow, wrist, hand, and temporomandibular joint."},
+  {"code": "PT 760", "title": "Pediatrics", "units": 4, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Spring", "system": "Mixed across areas", "cat": "Mixed across categories", "desc": "Examination and treatment of infants and children from premature birth through adolescence."},
+  {"code": "PT 762", "title": "Seminar II", "units": 2, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Summer", "system": "Professional responsibilities", "cat": "Mixed across categories", "desc": "Preparation for clinical education: the clinical performance instrument, clinic communication, and an in-service presentation."},
+  {"code": "PT 781", "title": "Integrated Clinical Decision-Making", "units": 1, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Summer", "system": "Mixed across areas", "cat": "Evaluation, differential diagnosis, and prognosis", "desc": "Applying classroom learning to patient cases from concurrent clinical education, with faculty mentorship."},
+  {"code": "PT 750", "title": "Comprehensive Exams", "units": 1, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Summer", "system": "Mixed across areas", "cat": "Mixed across categories", "desc": "Cumulative examination of didactic content to confirm readiness for full-time clinical education."},
+  {"code": "PT 769", "title": "Pharmacology", "units": 3, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Summer", "system": "System interactions", "cat": "Foundational sciences", "desc": "Pharmacokinetics and pharmacodynamics of drugs common in rehabilitation and their effects on patient performance."},
+  {"code": "PT 771", "title": "Clinical Experience I", "units": 8, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Summer", "system": "Mixed across areas", "cat": "Mixed across categories", "desc": "Full-time supervised clinical practice that integrates prior coursework."},
+  {"code": "PT 742", "title": "Prosthetics and Orthotics", "units": 2, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "Equipment, devices, and technologies", "cat": "Interventions", "desc": "Types, uses, and fitting of prosthetic and orthotic devices, with related patient care and education."},
+  {"code": "PT 764", "title": "Current Concepts in Chronic Pain", "units": 2, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "System interactions", "cat": "Evaluation, differential diagnosis, and prognosis", "desc": "Pain mechanisms, appraisal of pain evidence, and case-based management of persistent pain."},
+  {"code": "PT 774", "title": "Capstone I", "units": 3, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "Research and evidence-based practice", "cat": "Mixed across categories", "desc": "Framing a clinical question and conducting an extensive literature review."},
+  {"code": "PT 776", "title": "Capstone II", "units": 3, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "Research and evidence-based practice", "cat": "Mixed across categories", "desc": "Faculty-supervised data collection and synthesis to answer the capstone clinical question."},
+  {"code": "PT 798", "title": "Integumentary and Lymphedema Management", "units": 3, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "Integumentary", "cat": "Mixed across categories", "desc": "Examination and treatment of skin conditions, wounds, and lymphedema, with supervised lab practice."},
+  {"code": "PT 744", "title": "Professional Ethics", "units": 2, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "Professional responsibilities", "cat": "Mixed across categories", "desc": "Ethical decision-making, the APTA Code of Ethics, ethical dilemmas, and patient and professional advocacy."},
+  {"code": "PT 790", "title": "Physical Diagnosis Screening", "units": 3, "stage": "Year 2 · clinical management didactic", "term": "Year 2 Fall", "system": "System interactions", "cat": "Evaluation, differential diagnosis, and prognosis", "desc": "Screening examination to identify conditions appropriate or not appropriate for PT, including visceral referral and dermatological screening."},
+  {"code": "PT 773", "title": "Clinical Experience II", "units": 8, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Spring", "system": "Mixed across areas", "cat": "Mixed across categories", "desc": "Full-time supervised clinical practice that integrates prior coursework."},
+  {"code": "PT 778", "title": "Musculoskeletal Imaging", "units": 3, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Spring", "system": "Equipment, devices, and technologies", "cat": "Evaluation, differential diagnosis, and prognosis", "desc": "Uses and clinical interpretation of radiographs, MRI, CT, and nuclear imaging in rehabilitation planning."},
+  {"code": "PT 711", "title": "Wellness", "units": 3, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Summer", "system": "Mixed across areas", "cat": "Interventions", "desc": "Health promotion, wellness, and injury prevention across the lifespan."},
+  {"code": "PT 779", "title": "Special and Emerging Topics", "units": 2, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Summer", "system": "Mixed across areas", "cat": "Mixed across categories", "desc": "Current specialized topics in physical therapy through lecture and lab, including developing plans of care."},
+  {"code": "PT 768", "title": "Administration", "units": 3, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Summer", "system": "Professional responsibilities", "cat": "Mixed across categories", "desc": "Clinic management: finance, staffing, marketing, legal issues, and reimbursement."},
+  {"code": "PT 785", "title": "Advanced Patient Management", "units": 2, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Summer", "system": "System interactions", "cat": "Mixed across categories", "desc": "Clinical reasoning and advanced techniques for complex patients with multiple interacting conditions."},
+  {"code": "PT 783", "title": "Integrated Community Service and Milestones", "units": 0, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Summer", "system": "Professional responsibilities", "cat": "Mixed across categories", "desc": "Community service-learning and preparation for licensure, continuing education, and residency."},
+  {"code": "PT 775", "title": "Clinical Experience III", "units": 8, "stage": "Year 3 · final didactic / between clinical rotations", "term": "Year 3 Fall", "system": "Mixed across areas", "cat": "Mixed across categories", "desc": "Full-time supervised clinical practice that integrates prior coursework."}
 ];
 const courseLabel=c=>`${c.code} ${c.title}`.trim();
 function fillCourseList(){$("#course-list").innerHTML=COURSES.map(c=>`<option value="${courseLabel(c).replace(/"/g,"&quot;")}"></option>`).join("");}
 function matchCourse(){
   const val=v("f-course").toLowerCase();
-  return COURSES.find(c=>courseLabel(c).toLowerCase()===val)||null;
+  return COURSES.find(c=>courseLabel(c).toLowerCase()===val)||COURSES.find(c=>c.code.toLowerCase()===val)||null;
 }
 function setSel(id,val){const el=$("#"+id);if(val&&[...el.options].some(o=>o.textContent.trim()===val)){el.value=[...el.options].find(o=>o.textContent.trim()===val).value||val;}}
 function applyCourse(fromUser){
   const c=matchCourse(),card=$("#course-card");
   if(!c){card.hidden=true;return;}
   $("#cc-title").textContent=courseLabel(c);
-  $("#cc-desc").textContent=c.desc||"";
-  $("#cc-meta").textContent=[c.stage,c.system,c.cat].filter(Boolean).join(" · ");
+  $("#cc-meta").textContent=[c.term,c.units!=null?c.units+" units":"",c.system?"NPTE: "+c.system:""].filter(Boolean).join(" · ");
   card.hidden=false;
   if(fromUser){
     if(c.desc)$("#f-cdesc").value=c.desc;
