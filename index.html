@@ -31,6 +31,7 @@
   --ok:#5cc792; --ok-soft:#173527; --lock:#6a7590; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body)}
 a{color:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px;
@@ -55,19 +56,19 @@ header.top .lede{max-width:62ch;color:var(--muted);margin-top:10px}
 
 /* rail */
 .rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:6px}
-.rail button{all:unset;cursor:pointer;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;border:1px solid transparent}
-.rail button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rail > button{all:unset;cursor:pointer;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;border:1px solid transparent}
+.rail > button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rail .num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 .95rem var(--display);border:2px solid var(--line);color:var(--muted);background:var(--surface)}
 .rail .lbl{font-weight:600;line-height:1.2}
 .rail .st{display:block;font-size:.78rem;color:var(--muted);font-weight:400}
-.rail button[data-state="active"]{background:var(--surface);border-color:var(--line)}
-.rail button[data-state="active"] .num{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.rail button[data-state="done"] .num{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
-.rail button[data-state="locked"]{cursor:not-allowed;opacity:.6}
+.rail > button[data-state="active"]{background:var(--surface);border-color:var(--line)}
+.rail > button[data-state="active"] .num{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.rail > button[data-state="done"] .num{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.rail > button[data-state="locked"]{cursor:not-allowed;opacity:.6}
 .rail-extra{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
 @media (max-width:900px){
   .rail{position:static;flex-direction:row;overflow-x:auto;gap:4px}
-  .rail button{grid-template-columns:30px auto;padding:8px 10px}
+  .rail > button{grid-template-columns:30px auto;padding:8px 10px}
   .rail .num{width:30px;height:30px}
   .rail .st{display:none}
   .rail-extra{flex-direction:row;margin:0 0 0 auto;padding:0;border:0}
@@ -204,6 +205,22 @@ select option{color:var(--ink)}
 .sample li.key{border-color:var(--ok);background:var(--ok-soft)}
 .sample .why{font-size:.86rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
 .sample .why b{color:var(--ok)}
+
+/* course write-up */
+.course-card{grid-column:1/-1;border:1.5px solid var(--ok);background:var(--ok-soft);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.course-card .ct{font:700 1rem var(--display)}
+.course-card .cm{font-size:.86rem;color:var(--muted)}
+/* item loop strip */
+.loop{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;counter-reset:lp}
+@media (max-width:760px){.loop{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.loop li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;font-size:.88rem;color:var(--muted);line-height:1.35}
+.loop li b{color:var(--ink);font:700 .98rem var(--display)}
+.loop li b::before{counter-increment:lp;content:counter(lp) ". "}
+.loop li.back{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+/* expertise builder */
+.expert{border:1.5px solid var(--ink);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.expert h3{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.expert .tag{font:500 .72rem var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 
 /* prompt library */
 .libtools{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
@@ -350,7 +367,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="sub">
           <h3>B. Course and content</h3>
           <div class="grid2">
-            <div class="field"><label for="f-course">Course</label><input id="f-course" placeholder="e.g., DPT 641 Musculoskeletal Management II (Spine)"></div>
+            <div class="field"><label for="f-course">Course <small>(start typing a code or title)</small></label><input id="f-course" list="course-list" autocomplete="off" placeholder="e.g., DPT 641 Musculoskeletal Management II (Spine)"><datalist id="course-list"></datalist></div>
             <div class="field"><label for="f-stage">Curriculum stage</label>
               <select id="f-stage" required>
                 <option value="" selected disabled hidden>Select curriculum stage</option>
@@ -359,6 +376,13 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <option>Year 3 · final didactic / between clinical rotations</option>
                 <option>Post-didactic · licensure preparation</option>
               </select></div>
+            <div class="course-card" id="course-card" hidden>
+              <span class="ct" id="cc-title"></span>
+              <span id="cc-desc"></span>
+              <span class="cm" id="cc-meta"></span>
+            </div>
+            <div class="field span"><label for="f-cdesc">Course description <small>(fills in when you pick a course from the list; edit freely)</small></label>
+              <textarea id="f-cdesc" rows="3" placeholder="e.g., Examination, evaluation, and intervention for spinal conditions, including classification of low back pain, neurological screening, and manual therapy."></textarea></div>
             <div class="field span"><label for="f-topic">Topic</label><input id="f-topic" placeholder="e.g., Lumbar radiculopathy and treatment-based classification of low back pain"></div>
             <div class="field span"><label for="f-obj">Learning objectives <small>(paste from syllabus; optional but recommended)</small></label>
               <textarea id="f-obj" rows="4" placeholder="e.g.,&#10;1. Differentiate lumbar radiculopathy from referred and non-specific low back pain using history and neurological screening.&#10;2. Select interventions consistent with the low back pain CPG.&#10;3. Identify red flags that require referral."></textarea></div>
@@ -423,6 +447,12 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <option>Single vignette items, 4 options</option>
                 <option>Vignette clusters (2–4 items per case)</option>
                 <option>Mix of standalone and clusters</option>
+              </select></div>
+            <div class="field span"><label for="f-length">Item length</label>
+              <select id="f-length">
+                <option value="concise" selected>Concise: stem 40–70 words, options 1–8 words (recommended)</option>
+                <option value="standard">Standard: stem 70–100 words, options up to 12 words</option>
+                <option value="extended">Extended NPTE vignette: stem 100–150 words, options up to 15 words</option>
               </select></div>
             <div class="field span"><label for="f-setting">Practice settings to sample</label>
               <input id="f-setting" placeholder="e.g., Outpatient orthopedic, acute care, direct access"></div>
@@ -534,12 +564,45 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
           <div><b>Distractors</b>Plausible errors a student would make</div>
         </div>
 
-        <div class="tip"><b>Training tip</b><span>Set the item number. Open any prompt to read the full wording, then click Copy. Use only what helps. A good rhythm: write an item, run the flaw audit, refine, then accept.</span></div>
+        <div class="sub" style="gap:10px">
+          <h3>One item at a time</h3>
+          <ol class="loop" aria-label="The loop for each item">
+            <li><b>Write item #</b>Copy "Approve plan, write item #" (first item) and paste it in your AI chat.</li>
+            <li><b>Refine and audit</b>Use any prompt below, including your own clinical input.</li>
+            <li><b>Accept</b>Copy "Accept item #, write next". The item number here moves up by one.</li>
+            <li class="back"><b>Come back here</b>The AI stops after every item and points you back to this page.</li>
+          </ol>
+        </div>
 
         <div class="libtools">
           <div class="field"><label for="f-item">Item number</label><input id="f-item" type="number" min="1" value="1"></div>
           <div class="row"><button type="button" class="btn quiet small" id="btn-prev">− Prev</button><button type="button" class="btn quiet small" id="btn-next">Next +</button></div>
         </div>
+
+        <section class="expert" aria-labelledby="ex-h">
+          <h3 id="ex-h">Add your clinical expertise <span class="tag">your input</span></h3>
+          <p class="hint">Use this when the AI's version misses something you know from practice: how a test is really performed, what a patient in this setting actually presents with, or why a distractor would not fool a student.</p>
+          <div class="grid2">
+            <div class="field"><label for="x-part">Part of item #<span id="x-num">1</span> to change</label>
+              <select id="x-part">
+                <option>Whole item</option><option selected>Stem (vignette)</option><option>Lead-in question</option>
+                <option>Option A</option><option>Option B</option><option>Option C</option><option>Option D</option>
+                <option>Key</option><option>Rationale</option>
+              </select></div>
+            <div class="field"><label for="x-action">What the AI should do</label>
+              <select id="x-action">
+                <option value="revise" selected>Revise it to reflect my input</option>
+                <option value="replace">Rewrite this part around my input</option>
+                <option value="distractor">Turn my input into a better distractor</option>
+                <option value="check">Check my input against the sources, then revise</option>
+              </select></div>
+            <div class="field span"><label for="x-input">Your clinical input</label>
+              <textarea id="x-input" rows="3" placeholder="e.g., In outpatient practice, a patient with S1 radiculopathy usually also shows weak heel raises. Add single-leg heel raise: 4 reps on the right vs. 20 on the left, and remove the hip flexion finding."></textarea></div>
+          </div>
+          <label class="check"><input type="checkbox" id="x-keep" checked> Keep every other part of the item exactly as it is</label>
+          <details class="prompt"><summary>Prompt preview</summary><pre id="pv-expert"></pre></details>
+          <div class="row"><button type="button" class="btn gold" id="btn-expert">Copy expertise prompt</button></div>
+        </section>
 
         <div id="library"></div>
 
@@ -641,10 +704,10 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
 const $=s=>document.querySelector(s);
 const state={purpose:"course",unlocked:1,step:1,clips:[]};
 const KEY="dpt-item-studio-v2";
-const fields=["f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
+const fields=["f-cdesc","f-length","x-part","x-action","x-input","f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
 
-function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
+function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.xkeep=$("#x-keep").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if("xkeep" in d)$("#x-keep").checked=d.xkeep;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
 
 const v=id=>($("#"+id).value||"").trim();
 const item=()=>v("f-item")||"1";
@@ -668,6 +731,41 @@ ${rule}
 `;
 }
 
+/* DPT curriculum course list.
+   One entry per course. stage must match a Curriculum stage option exactly; system and cat must
+   match the NPTE dropdown options exactly, or be left as "". */
+const COURSES=[
+  // {code:"DPT 641", title:"Musculoskeletal Management II (Spine)", stage:"Year 2 · clinical management didactic", system:"Musculoskeletal", cat:"", desc:"Examination, evaluation, and intervention for spinal conditions."},
+];
+const courseLabel=c=>`${c.code} ${c.title}`.trim();
+function fillCourseList(){$("#course-list").innerHTML=COURSES.map(c=>`<option value="${courseLabel(c).replace(/"/g,"&quot;")}"></option>`).join("");}
+function matchCourse(){
+  const val=v("f-course").toLowerCase();
+  return COURSES.find(c=>courseLabel(c).toLowerCase()===val)||null;
+}
+function setSel(id,val){const el=$("#"+id);if(val&&[...el.options].some(o=>o.textContent.trim()===val)){el.value=[...el.options].find(o=>o.textContent.trim()===val).value||val;}}
+function applyCourse(fromUser){
+  const c=matchCourse(),card=$("#course-card");
+  if(!c){card.hidden=true;return;}
+  $("#cc-title").textContent=courseLabel(c);
+  $("#cc-desc").textContent=c.desc||"";
+  $("#cc-meta").textContent=[c.stage,c.system,c.cat].filter(Boolean).join(" · ");
+  card.hidden=false;
+  if(fromUser){
+    if(c.desc)$("#f-cdesc").value=c.desc;
+    setSel("f-stage",c.stage);setSel("f-system",c.system);setSel("f-cat",c.cat);
+  }
+}
+
+const LEN={
+  concise:{stem:"40–70 words",lead:"one sentence of 15 words or fewer",opt:"1–8 words each",rat:"one sentence for the key and one short sentence per distractor"},
+  standard:{stem:"70–100 words",lead:"one sentence of 20 words or fewer",opt:"12 words or fewer each",rat:"one to two sentences for the key and one sentence per distractor"},
+  extended:{stem:"100–150 words",lead:"one sentence of 20 words or fewer",opt:"15 words or fewer each",rat:"two sentences for the key and one sentence per distractor"}
+};
+const len=()=>LEN[v("f-length")]||LEN.concise;
+const RETURN_LINE=()=>`Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item ${item()}.`;
+const LOOP=()=>`\n\nWhen you finish what this message asks, stop. Do not go on to any other item. End your reply with the Studio line from my first message.`;
+
 const purposeText={
   course:{label:"a course exam",frame:"Keep every item within the scope of the listed objectives and what students in this course have been taught. Difficulty should discriminate mastery of this course's content, not knowledge from later courses."},
   practical:{label:"a case-based quiz",frame:"Build short clinical scenarios that check clinical reasoning for this module. Favor application over recall, and keep items answerable with this module's content."},
@@ -683,7 +781,7 @@ function starter(){
   return `You are an experienced Doctor of Physical Therapy (DPT) faculty member and a trained NPTE-style item writer. Help me write ${v("f-n")||"10"} single-best-answer multiple-choice questions for ${p.label}.
 
 Course: ${v("f-course")||"[course]"}
-Curriculum stage: ${sel("f-stage","not specified")}
+${v("f-cdesc")?"Course description: "+v("f-cdesc")+"\n":""}Curriculum stage: ${sel("f-stage","not specified")}
 Topic: ${v("f-topic")||"[topic]"}
 ${obj}
 NPTE-PT content outline alignment:
@@ -705,7 +803,20 @@ Item-writing standards:
 - Base clinical content on current evidence and APTA academy clinical practice guidelines. If you are not certain a fact is current and correct, mark it [verify].
 - Use person-first, unbiased language and vary patient demographics without stereotyping.
 
-Before writing any items, give me a short plan as a table: item number, specific focus, NPTE system/area, content category, Bloom's level, and practice setting. Then stop and wait for my approval.
+Length limits (follow strictly; students read many items under time pressure):
+- Stem: ${len().stem}, including the lead-in. Write in short clinical sentences. Use standard abbreviations (ROM, MMT, SLR, NPRS, PT) and drop filler such as "presents to physical therapy with complaints of."
+- Lead-in: ${len().lead}, for example "Which intervention is MOST appropriate?"
+- Options: ${len().opt}. Write options as short phrases, not sentences. No explanations, qualifiers, or reasons inside an option; those belong in the rationale.
+- Rationale: ${len().rat}.
+- Before you send an item, check it against these limits and cut anything over.
+
+Working rhythm (follow every time):
+- Write only one item per reply, then stop. Never write the next item until I send a message that says "I accept item" or "Write item".
+- After the plan, and after every item or revision, end your reply with this line on its own:
+"${RETURN_LINE().replace(/item \d+\.$/,"item [number].")}"
+- When I paste a revision request, change only what it asks for and show the full revised item.
+
+Before writing any items, give me a short plan as a table: item number, specific focus, NPTE system/area, content category, Bloom's level, and practice setting. Then stop, end with the Studio line, and wait for my approval.
 
 After I approve, write one item at a time in this format:
 Item #:
@@ -722,13 +833,14 @@ Key:${rat}
 const L=[
  {h:"Accept or replace",tag:"pace",items:[
   {t:"Approve plan, write item #",d:"Start writing from the approved plan",p:()=>`I approve the plan. Write item ${item()} now, following the standards and format from my first message. Stop after this one item.`},
-  {t:"Accept item #, write next",d:"Lock it in and move on",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format. Stop after that item.`},
+  {t:"Accept item #, write next",adv:true,d:"Lock it in and move on",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format. Stop after that item.`},
   {t:"Replace item #",d:"Same objective, a different case",p:()=>`Replace item ${item()} with a new item that tests the same objective and NPTE category but uses a different patient, setting, and clinical presentation. Keep the same format.`},
   {t:"Raise difficulty",d:"Push it up a Bloom's level",p:()=>`Make item ${item()} harder by requiring a higher level of reasoning (for example, prioritizing among several reasonable actions, or interpreting combined exam findings), not by adding obscure facts. Explain what changed.`},
   {t:"Lower difficulty",d:"For earlier-stage students",p:()=>`Make item ${item()} more accessible for students at this curriculum stage. Keep it at the application level if possible, simplify the vignette, and make the key more clearly the best answer. Explain what changed.`}
  ]},
  {h:"Refine the stem",tag:"vignette",items:[
   {t:"Make the vignette realistic",d:"Add the exam data a PT would see",p:()=>`Revise the stem of item ${item()} so it reads like a real patient encounter. Add realistic history and examination data with proper units (vitals, ROM in degrees, MMT grades, special tests with results, outcome measure scores). Keep only details that matter to the answer or serve as realistic distractors.`},
+  {t:"Tighten wording",d:"Enforce the length limits",p:()=>`Item ${item()} is too wordy. Rewrite it to fit the length limits from my first message: stem ${len().stem}, lead-in ${len().lead}, options ${len().opt}. Keep every clinical finding needed to reach the key, the same key, and the same reasoning demand. Turn sentence-length options into short parallel phrases. Show the word count of the stem.`},
   {t:"Cut window dressing",d:"Shorter stem, same reasoning",p:()=>`Shorten the stem of item ${item()}. Remove details that do not affect the answer and are not deliberate clinical distractors. Keep the reasoning demand the same.`},
   {t:"Fix the lead-in",d:"Cover-the-options test",p:()=>`Check the lead-in of item ${item()}. A prepared student should be able to answer it with the options covered. If not, rewrite it as a clear, positively worded question (for example, "Which intervention is MOST appropriate at this time?").`},
   {t:"Turn into a case cluster",d:"2–4 items on one vignette",p:()=>`Expand item ${item()} into an NPTE-style vignette cluster: one shared patient case followed by 3 items that progress through examination, evaluation or diagnosis, and intervention. Each item must be answerable independently so that missing one does not give away another.`},
@@ -768,6 +880,28 @@ Keep the stem and options exactly as approved. No extra commentary.`},
  {t:"Student remediation sheet",d:"Post after the exam closes",p:()=>`Using the final items, write a student-facing remediation sheet: for each item, the concept tested, the key reasoning step, the common error behind each distractor, and the CPG or textbook reference to review. Do not include the full stems or options.`}
 ];
 
+function expertPrompt(){
+  const part=v("x-part"),act=v("x-action"),inp=v("x-input")||"[type your clinical input in the Studio]";
+  const what={
+    revise:`Revise the ${part.toLowerCase()} so it reflects my input.`,
+    replace:`Rewrite the ${part.toLowerCase()} around my input.`,
+    distractor:`Use my input to write a more plausible distractor${/^Option/.test(part)?" for "+part:""}, one that reflects a realistic clinical misconception.`,
+    check:`First check my input against ${mode()==="none"?"current clinical practice guidelines":"the uploaded sources"} and cite what supports or contradicts it. Then revise the ${part.toLowerCase()} to reflect my input.`
+  }[act];
+  return `Revise item ${item()} using my clinical expertise as a practicing physical therapist.
+
+Part to change: ${part}
+My clinical input:
+"${inp}"
+
+Instructions:
+- ${what}
+- Treat my input as expert clinical knowledge and write it in the item's voice. Do not add new facts I did not give unless the item needs them to stay accurate.
+- ${$("#x-keep").checked?"Keep every other part of the item exactly as it is.":"You may adjust other parts only as far as needed to stay consistent with my input; list what you changed."}
+- Stay within the length limits from my first message.
+- If my input changes which option is correct, makes a second option defensible, or conflicts with a current CPG${mode()==="none"?"":" or the uploaded sources"}, say so in one line and propose a fix instead of changing the key silently.
+- Show the full revised item, then one line listing what changed.${LOOP()}`;
+}
 function bankPrompt(){
   const opts=id=>[...document.querySelectorAll("#"+id+" option")].map(o=>o.textContent.trim()).filter((t,i,a)=>t&&!t.startsWith("Select")&&a.indexOf(t)===i);
   const stages=opts("f-stage"), systems=opts("f-system"), cats=opts("f-cat");
@@ -822,8 +956,10 @@ function renderLib(){
       const id=`p-${gi}-${ii}`,label=it.t.replace("#","#"+item());
       const d=document.createElement("details");d.className="pcard";d.id=id;d.open=openSet.has(id);
       d.innerHTML=`<summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span><span class="t"></span><br><span class="d"></span></span><button type="button" class="btn gold small">Copy</button></summary><div class="body"><pre></pre></div>`;
-      d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=it.d;d.querySelector("pre").textContent=it.p();
-      d.querySelector("summary .btn").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();copy(it.p(),label);flash(d);});
+      const full=()=>it.p()+LOOP();
+      d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=it.d;d.querySelector("pre").textContent=full();
+      d.querySelector("summary .btn").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();copy(full(),label);flash(d);
+        if(it.adv){$("#f-item").value=+item()+1;refresh();toast(`Copied. Item number is now ${item()}.`);}});
       d.addEventListener("toggle",()=>{d.open?openSet.add(id):openSet.delete(id);});
       wrap.appendChild(d);
     });
@@ -877,6 +1013,7 @@ function refresh(){
   $("#pv-start").textContent=starter();
   $("#pv-final").textContent=finalPrompt();
   $("#pv-bank").textContent=bankPrompt();
+  $("#pv-expert").textContent=expertPrompt();$("#x-num").textContent=item();
   renderLib();
   $("#embed-code").textContent=embed();
   save();
@@ -902,6 +1039,8 @@ $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
 $("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=true));
 $("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=false));
+$("#btn-expert").addEventListener("click",()=>copy(expertPrompt(),`Expertise prompt, item #${item()}`));
+$("#f-course").addEventListener("input",()=>applyCourse(true));
 $("#btn-bank").addEventListener("click",()=>copy(bankPrompt(),"Item bank prompt"));
 $("#btn-final").addEventListener("click",()=>copy(finalPrompt(),"Final set prompt"));
 $("#btn-prev").addEventListener("click",()=>{$("#f-item").value=Math.max(1,+item()-1);refresh();});
@@ -920,7 +1059,7 @@ load();
 const syncSrc=()=>{$("#src-body").hidden=!$("#f-usesrc").checked;};
 $("#f-usesrc").addEventListener("change",syncSrc);
 document.querySelectorAll("#purpose .choice").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===state.purpose?"true":"false"));
-syncSrc();
+fillCourseList();applyCourse(false);syncSrc();
 refresh();
 show(Math.min(state.step,state.unlocked));
 function openApp(open){$("#start").hidden=open;$("#app").hidden=!open;window.scrollTo(0,0);if(open)$("#rail-"+state.step).focus();}
