@@ -222,6 +222,22 @@ select option{color:var(--ink)}
 .expert h3{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .expert .tag{font:500 .72rem var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 
+/* file uploads */
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--bg)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+.drop .hint{flex:1 1 220px;font-weight:400}
+.upstatus{font-size:.9rem;display:flex;flex-direction:column;gap:6px}
+.upstatus .err{color:#a50e0e}
+:root[data-theme="dark"] .upstatus .err{color:#f28b82}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .upstatus .err{color:#f28b82}}
+.review{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.filelist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.filelist li{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:.92rem}
+.filelist .fn{font-weight:700;word-break:break-word}
+.filelist .fm{grid-column:1/-1;color:var(--muted);font-size:.84rem}
+.filelist .check{font-size:.86rem}
+
 /* prompt library */
 .libtools{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
 .libtools .field{width:150px}
@@ -383,7 +399,25 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
             <div class="field span"><label for="f-cdesc">Course description <small>(fills in when you pick a course from the list; edit freely)</small></label>
               <textarea id="f-cdesc" rows="3" placeholder="e.g., Examination, evaluation, and intervention for spinal conditions, including classification of low back pain, neurological screening, and manual therapy."></textarea></div>
             <div class="field span"><label for="f-topic">Topic</label><input id="f-topic" placeholder="e.g., Lumbar radiculopathy and treatment-based classification of low back pain"></div>
-            <div class="field span"><label for="f-obj">Learning objectives <small>(paste from syllabus; optional but recommended)</small></label>
+            <div class="field span">
+              <span style="font-weight:600;font-size:.92rem">Upload your syllabus <small style="font-weight:400;color:var(--muted)">(PDF, Word, or text; the objectives are pulled out for you to review)</small></span>
+              <label class="drop" id="syl-drop" for="syl-file">
+                <input type="file" id="syl-file" accept=".pdf,.docx,.txt,.md">
+                <span class="btn quiet small" aria-hidden="true">Choose syllabus file</span>
+                <span class="hint">or drag it here. The file is read in your browser and never sent anywhere.</span>
+              </label>
+              <div class="upstatus" id="syl-status" aria-live="polite"></div>
+              <div class="review" id="syl-review" hidden>
+                <label for="syl-found" id="syl-found-label">Objectives found</label>
+                <textarea id="syl-found" rows="6"></textarea>
+                <div class="row">
+                  <button type="button" class="btn gold small" id="syl-use">Use these as learning objectives</button>
+                  <button type="button" class="btn quiet small" id="syl-add">Add to what's already there</button>
+                  <button type="button" class="btn quiet small" id="syl-cancel">Dismiss</button>
+                </div>
+              </div>
+            </div>
+            <div class="field span"><label for="f-obj">Learning objectives <small>(upload above, or paste from your syllabus)</small></label>
               <textarea id="f-obj" rows="4" placeholder="e.g.,&#10;1. Differentiate lumbar radiculopathy from referred and non-specific low back pain using history and neurological screening.&#10;2. Select interventions consistent with the low back pain CPG.&#10;3. Identify red flags that require referral."></textarea></div>
           </div>
         </div>
@@ -483,7 +517,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <li>Add sources: lecture slides and notes (PDF or Google Slides), the CPG PDFs, assigned textbook chapters, and your syllabus objectives.</li>
                 <li>Check that every source finished loading and is selected before you paste the starter prompt.</li>
               </ol>
-              <p class="hint">NotebookLM answers from the sources you add and links each answer to the passage it came from, which makes it the better fit for exam writing. In Gemini, attach the same files to the chat or to a Gem.</p>
+              <p class="hint">NotebookLM answers from the sources you add and links each answer to the passage it came from, which makes it the better fit for exam writing. In Gemini, attach the same files to the chat or to a Gem. Using a different AI tool? Upload your files on the right instead, and their text goes straight into the starter prompt.</p>
             </div>
             <div class="src-card">
               <h4>What did you upload?</h4>
@@ -495,7 +529,17 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <label class="check"><input type="checkbox" class="src" id="src-syl" value="course syllabus and objectives"> Syllabus and learning objectives</label>
                 <label class="check"><input type="checkbox" class="src" id="src-lab" value="lab manual or skills checklists"> Lab manual or skills checklists</label>
               </div>
-              <div class="field"><label for="f-srcnames">Source titles <small>(optional, one per line)</small></label>
+              <div class="field">
+                <span style="font-weight:600;font-size:.92rem">Upload source files <small style="font-weight:400;color:var(--muted)">(lecture PDFs, CPGs, chapters, Word or text files)</small></span>
+                <label class="drop" id="src-drop" for="src-file">
+                  <input type="file" id="src-file" accept=".pdf,.docx,.txt,.md" multiple>
+                  <span class="btn quiet small" aria-hidden="true">Choose files</span>
+                  <span class="hint">or drag them here. Read in your browser only. The text is added to the starter prompt, so any AI tool can use it.</span>
+                </label>
+                <div class="upstatus" id="src-status" aria-live="polite"></div>
+                <ul class="filelist" id="src-list"></ul>
+              </div>
+              <div class="field"><label for="f-srcnames">Source titles <small>(filled in from your uploads; add any others, one per line)</small></label>
                 <textarea id="f-srcnames" placeholder="e.g.,&#10;Low back pain CPG (JOSPT)&#10;DPT 641 Week 5–6 lecture slides&#10;Magee, Orthopedic Physical Assessment – lumbar chapter"></textarea></div>
               <div class="field"><label for="f-srcmode">How strictly should the AI stick to them?</label>
                 <select id="f-srcmode">
@@ -731,7 +775,7 @@ function grounding(){
    :`- Use these sources first for every stem, key, and rationale.
 - If you must use outside knowledge, label that statement [outside source] so I can verify it.`;
   return `\nSource grounding:
-I have uploaded ${list} to this notebook.${names}
+${sources.some(x=>x.include)?`I am providing ${list}. Their text is pasted at the end of this message.`:`I have uploaded ${list} to this notebook.`}${names}
 ${rule}
 - Cite the source and page, slide, or section that supports each key.
 - Where the sources disagree with each other, tell me instead of choosing silently.
@@ -823,6 +867,142 @@ ${MEDIA_RULES}
 const RETURN_LINE=()=>`Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item ${item()}.`;
 const LOOP=()=>`\n\nWhen you finish what this message asks, stop. Do not go on to any other item. End your reply with the Studio line from my first message.`;
 
+/* ---------- file reading (all in the browser) ---------- */
+const LIBS={
+  pdf:["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"],
+  docx:["https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"]
+};
+const loaded={};
+function loadScript(src){
+  if(loaded[src])return loaded[src];
+  return loaded[src]=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src=src;sc.onload=res;sc.onerror=()=>{delete loaded[src];rej(new Error("Could not load the file reader. Check your internet connection and try again."));};document.head.appendChild(sc);});
+}
+async function readPdf(buf){
+  for(const src of LIBS.pdf)await loadScript(src);
+  const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc=LIBS.pdf[0];
+  const doc=await lib.getDocument({data:buf,isEvalSupported:false}).promise;
+  const pages=[];
+  for(let i=1;i<=doc.numPages;i++){
+    const tc=await (await doc.getPage(i)).getTextContent();
+    let out="",lastY=null;
+    for(const it of tc.items){
+      const y=it.transform?it.transform[5]:null;
+      if(lastY!==null&&y!==null&&Math.abs(y-lastY)>2&&!out.endsWith("\n"))out+="\n";
+      out+=it.str; if(it.hasEOL)out+="\n"; if(y!==null)lastY=y;
+    }
+    pages.push(out.replace(/[ \t]+\n/g,"\n").trim());
+  }
+  return {text:pages.map((t,i)=>`[Page ${i+1}]\n${t}`).join("\n\n"),plain:pages.join("\n"),pages:doc.numPages};
+}
+async function readFile(file){
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  if(ext==="pdf")return readPdf(await file.arrayBuffer());
+  if(ext==="docx"){
+    for(const src of LIBS.docx)await loadScript(src);
+    const r=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+    const t=r.value.replace(/\n{3,}/g,"\n\n").trim(); return {text:t,plain:t,pages:null};
+  }
+  if(ext==="txt"||ext==="md"){const t=(await file.text()).trim();return {text:t,plain:t,pages:null};}
+  if(ext==="doc")throw new Error("Older .doc files can't be read here. Save it as .docx or PDF and try again.");
+  throw new Error("This file type can't be read here. Use PDF, Word (.docx), or a text file.");
+}
+const words=t=>(t.match(/\S+/g)||[]).length;
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function wireDrop(dropId,inputId,onFiles){
+  const d=$("#"+dropId),inp=$("#"+inputId);
+  inp.addEventListener("change",()=>{if(inp.files.length)onFiles([...inp.files]);inp.value="";});
+  ["dragenter","dragover"].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add("over");}));
+  ["dragleave","drop"].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove("over");}));
+  d.addEventListener("drop",e=>{const f=[...(e.dataTransfer?.files||[])];if(f.length)onFiles(f);});
+}
+
+/* syllabus: find the objectives section */
+const OBJ_HEAD=/^\s*(?:[ivx\d]+[.)]\s*)?(?:(?:student|course|specific|expected|terminal|instructional)\s+)*(?:learning\s+)?(?:objectives|outcomes)\b/i;
+const NEXT_HEAD=/^\s*(?:[ivx\d]+[.)]\s*)?(?:required|recommended|textbooks?|texts?|readings?|course (?:description|schedule|requirements|policies|materials|format)|grading|evaluation|assessment|methods|teaching|instructional methods|schedule|attendance|policies|academic|instructor|faculty|office hours|course calendar|topical outline|content outline|outline|assignments|examinations?|exams?|university|disability|accommodations|apa|professional behaviors?)\b/i;
+const ITEM=/^\s*(?:\d{1,2}[.)]|[a-z][.)]|[•●▪◦\-–*]|\(\d{1,2}\)|\(?[a-z]\))\s+/i;
+const VERB=/^(?:describe|explain|identify|perform|apply|analy[sz]e|differentiate|select|demonstrate|interpret|discuss|compare|contrast|evaluate|design|develop|integrate|document|recognize|determine|justify|execute|formulate|plan|implement|educate|communicate|assess|utilize|use|value|display|articulate|critique|synthesize|list|define|examine|prescribe|modify|screen|administer|summarize|appraise|construct|instruct|distinguish|classify|calculate|predict|propose|manage)\b/i;
+function findObjectives(plain){
+  const lines=plain.split("\n").map(l=>l.replace(/\s+/g," ").trim()).filter(l=>l&&!/^\[Page \d+\]$/.test(l));
+  let best=null;
+  for(let i=0;i<lines.length;i++){
+    if(!OBJ_HEAD.test(lines[i])||lines[i].length>140)continue;
+    const items=[];let cur=null;
+    for(let j=i+1;j<lines.length&&j<i+120;j++){
+      const l=lines[j];
+      if(NEXT_HEAD.test(l)&&l.length<70&&!ITEM.test(l))break;
+      if(OBJ_HEAD.test(l)&&l.length<70&&items.length)break;
+      if(ITEM.test(l)){if(cur)items.push(cur);cur=l.replace(ITEM,"").trim();}
+      else if(VERB.test(l)&&(!cur||/[.;:]$/.test(cur))){if(cur)items.push(cur);cur=l;}
+      else if(cur){cur+=" "+l;}
+      else if(/^(upon|by the end|at the (?:end|conclusion)|after completing|students will|the student will|on completion)/i.test(l)){continue;}
+      else if(items.length===0&&l.length>40){cur=l;}
+    }
+    if(cur)items.push(cur);
+    const clean=items.map(t=>t.replace(/\s+/g," ").trim()).filter(t=>t.length>12&&t.length<600);
+    if(clean.length&&(!best||clean.length>best.length))best=clean;
+  }
+  return best;
+}
+let sylText="";
+async function onSyllabus(files){
+  const f=files[0],st=$("#syl-status");
+  st.innerHTML=`<span>Reading ${esc(f.name)}…</span>`;$("#syl-review").hidden=true;
+  try{
+    const r=await readFile(f);sylText=r.plain;
+    if(words(r.plain)<20){st.innerHTML=`<span class="err">No readable text in ${esc(f.name)}. It may be a scanned PDF. Paste the objectives below instead.</span>`;return;}
+    const objs=findObjectives(r.plain);
+    if(objs){
+      $("#syl-found").value=objs.map((o,i)=>`${i+1}. ${o}`).join("\n");
+      $("#syl-found-label").textContent=`Found ${objs.length} objective${objs.length>1?"s":""} in ${f.name}. Review and edit before using them.`;
+      st.innerHTML="";
+    }else{
+      $("#syl-found").value=r.plain.slice(0,6000);
+      $("#syl-found-label").textContent=`No objectives heading found in ${f.name}. Here is the start of the text: delete everything except the objectives, then use it.`;
+      st.innerHTML="";
+    }
+    $("#syl-review").hidden=false;
+  }catch(e){st.innerHTML=`<span class="err">${esc(e.message||"Could not read that file.")}</span>`;}
+}
+
+/* sources: keep extracted text in memory for the starter prompt */
+const sources=[];
+const MAX_WORDS=25000;
+function renderSources(){
+  const ul=$("#src-list");ul.innerHTML="";
+  sources.forEach((sr,i)=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span class="fn"></span><button type="button" class="btn quiet small">Remove</button><span class="fm"></span><label class="check"><input type="checkbox"> Include the text in the starter prompt</label>`;
+    li.querySelector(".fn").textContent=sr.name;
+    li.querySelector(".fm").textContent=[sr.pages?sr.pages+" pages":"",sr.words.toLocaleString()+" words"].filter(Boolean).join(" · ");
+    const cb=li.querySelector("input");cb.checked=sr.include;cb.id="src-inc-"+i;
+    cb.addEventListener("change",()=>{sr.include=cb.checked;refresh();});
+    li.querySelector("button").addEventListener("click",()=>{sources.splice(i,1);renderSources();refresh();});
+    ul.appendChild(li);
+  });
+  const tot=sources.filter(x=>x.include).reduce((a,x)=>a+x.words,0);
+  $("#src-status").innerHTML=tot>MAX_WORDS?`<span class="err">The included text is ${tot.toLocaleString()} words. Some AI tools cut off prompts this long. Uncheck large files and upload those directly to NotebookLM or Gemini instead.</span>`:(tot?`<span>${tot.toLocaleString()} words of source text will go into the starter prompt.</span>`:"");
+}
+async function onSources(files){
+  for(const f of files){
+    $("#src-status").innerHTML=`<span>Reading ${esc(f.name)}…</span>`;
+    try{
+      const r=await readFile(f);const w=words(r.plain);
+      if(w<20){$("#src-status").innerHTML=`<span class="err">No readable text in ${esc(f.name)}. It may be a scanned PDF. Upload it directly to NotebookLM or Gemini instead.</span>`;continue;}
+      const title=f.name.replace(/\.[^.]+$/,"").replace(/[_]+/g," ");
+      sources.push({name:f.name,title,text:r.text,words:w,pages:r.pages,include:w<=MAX_WORDS});
+      const cur=v("f-srcnames").split("\n").map(x=>x.trim()).filter(Boolean);
+      if(!cur.includes(title)){$("#f-srcnames").value=[...cur,title].join("\n");}
+    }catch(e){$("#src-status").innerHTML=`<span class="err">${esc(f.name)}: ${esc(e.message||"could not be read.")}</span>`;}
+  }
+  renderSources();refresh();
+}
+function sourceTextBlock(){
+  if(mode()==="none")return "";
+  const inc=sources.filter(x=>x.include);if(!inc.length)return "";
+  return `\n\n===== SOURCE TEXT =====\nThe text below was extracted from my files. Treat it as the uploaded sources named above. Page markers like [Page 4] are for citations.\n`+
+    inc.map(x=>`\n----- ${x.title} -----\n${x.text}`).join("\n")+`\n===== END OF SOURCE TEXT =====`;
+}
+
 const purposeText={
   course:{label:"a course exam",frame:"Keep every item within the scope of the listed objectives and what students in this course have been taught. Difficulty should discriminate mastery of this course's content, not knowledge from later courses."},
   practical:{label:"a case-based quiz",frame:"Build short clinical scenarios that check clinical reasoning for this module. Favor application over recall, and keep items answerable with this module's content."},
@@ -884,7 +1064,7 @@ B.
 C.
 D.
 Key:${rat}
-- Reference: ${mode()==="none"?"CPG or textbook source, marked [verify] if uncertain":"uploaded source with page, slide, or section"}${v("f-media")&&v("f-media")!=="none"?"\nFor an image or video item, add the media specification:\n"+MEDIA_SPEC:""}`;
+- Reference: ${mode()==="none"?"CPG or textbook source, marked [verify] if uncertain":"uploaded source with page, slide, or section"}${v("f-media")&&v("f-media")!=="none"?"\nFor an image or video item, add the media specification:\n"+MEDIA_SPEC:""}${sourceTextBlock()}`;
 }
 
 const L=[
@@ -1113,6 +1293,11 @@ $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
 $("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=true));
 $("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=false));
+wireDrop("syl-drop","syl-file",onSyllabus);
+wireDrop("src-drop","src-file",onSources);
+$("#syl-use").addEventListener("click",()=>{$("#f-obj").value=v("syl-found");$("#syl-review").hidden=true;$("#syl-status").innerHTML="<span>Objectives added. Edit them below if needed.</span>";refresh();});
+$("#syl-add").addEventListener("click",()=>{$("#f-obj").value=[v("f-obj"),v("syl-found")].filter(Boolean).join("\n");$("#syl-review").hidden=true;$("#syl-status").innerHTML="<span>Objectives added below what was already there.</span>";refresh();});
+$("#syl-cancel").addEventListener("click",()=>{$("#syl-review").hidden=true;});
 $("#btn-expert").addEventListener("click",()=>copy(expertPrompt(),`Expertise prompt, item #${item()}`));
 $("#f-course").addEventListener("input",()=>applyCourse(true));
 $("#btn-bank").addEventListener("click",()=>copy(bankPrompt(),"Item bank prompt"));
