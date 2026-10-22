@@ -241,6 +241,7 @@ select option{color:var(--ink)}
 /* step 2 layout */
 .itembar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--sunk);border-radius:10px;padding:10px 14px}
 .itembar label{font-family:var(--display);font-weight:700;font-size:1rem}
+.itemof{font-family:var(--display);font-weight:700}
 .itembar input{width:72px;text-align:center;font:700 1.05rem var(--display);padding:6px}
 .itembar .hint{flex:1 1 260px;margin-left:6px}
 @media (max-width:640px){.itembar .hint{flex-basis:100%;margin-left:0}}
@@ -660,6 +661,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
           <button type="button" class="btn quiet small" id="btn-prev" aria-label="Previous item">−</button>
           <input id="f-item" type="number" min="1" value="1">
           <button type="button" class="btn quiet small" id="btn-next" aria-label="Next item">+</button>
+          <span class="itemof">of <span id="set-n">10</span></span>
           <span class="hint">Each prompt below is written for this item. The AI stops after every item and sends you back here.</span>
         </div>
 
@@ -706,6 +708,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="stage">
           <div class="stage-h"><span class="stage-n">3</span><div><h3>Accept item <span class="inum">1</span></h3><p class="hint">Copying this moves the item number here up by one.</p></div></div>
           <div class="plist" id="lib-accept"></div>
+          <p class="tip" id="done-note" hidden><b>Set complete</b><span>All items are written. Click "I'm done writing items" to compile the final set.</span></p>
           <p class="hint" style="margin:0">No item in the AI's reply yet? <button type="button" class="linkbtn" id="btn-writeitem">Copy "Write item <span class="inum">1</span>"</button></p>
         </div>
 
@@ -1216,7 +1219,7 @@ function starter(){
   const obj=v("f-obj")?`\nLearning objectives:\n${v("f-obj")}\n`:"\nLearning objectives: not provided. Infer reasonable entry-level objectives for this topic and list them in your plan.\n";
   const extra=v("f-extra")?`\nAdditional parameters:\n${v("f-extra")}\n`:"";
   const rat=$("#f-rationale").checked?"\n- Rationale: why the key is correct and why each distractor is wrong (one to two sentences each)":"\n- Brief rationale for the key";
-  return `You are an experienced Doctor of Physical Therapy (DPT) faculty member and a trained NPTE-style item writer. Help me write ${v("f-n")||"10"} single-best-answer multiple-choice questions for ${p.label}.
+  return `You are an experienced Doctor of Physical Therapy (DPT) faculty member and a trained NPTE-style item writer. Help me write exactly ${setSize()} single-best-answer multiple-choice questions for ${p.label}.
 
 Course: ${v("f-course")||"[course]"}
 ${v("f-cdesc")?"Course description: "+v("f-cdesc")+"\n":""}Curriculum stage: ${sel("f-stage","not specified")}
@@ -1251,6 +1254,7 @@ Length limits (follow strictly; students read many items under time pressure):
 - Before you send an item, check it against these limits and cut anything over.
 
 Working rhythm (follow every time):
+- The set has exactly ${setSize()} items, numbered 1 to ${setSize()}. Never write more than ${setSize()} items, and never add items on your own, including when I ask you to compile, format, or export the set.
 - Write only one item per reply, then stop. After your first reply, never write a new item until I send a message that says "I accept item" or "Write item".
 - After every reply that contains a full item, end with this line on its own, using the number of the item you just wrote:
 "Next: return to the DPT Item Writing Studio, Step 2, to check, improve, or accept item [number]."
@@ -1327,12 +1331,19 @@ ${MEDIA_RULES.replace(/\n- Place[\s\S]*$/,"")}`},
    {t:"Bias and language check",d:"Person-first, fair to all",p:()=>`Review item ${item()} for bias and language: person-first wording, stereotyped demographics, regional or cultural idioms, unnecessary reading load, and content that could disadvantage English-language learners. Suggest revisions.`}
   ]}
  ],
- accept:[{t:"Accept item #, write the next one",adv:true,primary:true,d:"Locks this item in and asks for the next",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format, with the correct answer at option ${keyFor(+item()+1)}. Stop after that item.`}]
+ accept:[{t:"Accept item #, write the next one",adv:true,primary:true,d:"Locks this item in and asks for the next",
+  last:()=>+item()>=setSize(),
+  tLast:"Accept item #, the last item",dLast:"Completes the set. Then go to Step 3.",
+  p:()=>+item()>=setSize()
+   ?`I accept item ${item()} as written. That completes the set of ${setSize()} items. Do not write any more items. Reply only with: "All ${setSize()} items are written. Return to the DPT Item Writing Studio, Step 3, to compile the final set."`
+   :`I accept item ${item()} as written. Write item ${+item()+1} of ${setSize()} from the plan, using the same standards and format, with the correct answer at option ${keyFor(+item()+1)}. Stop after that item.`}]
 };
 const WRITE_ITEM=()=>`${startMode()==="plan"?"I approve the plan. ":""}Write item ${item()} now, following the standards and format from my first message, with the correct answer at option ${keyFor(+item())}. Stop after this one item.`;
 
 const C=[
- {t:"QTI via text2qti",d:"Best for bulk import into Canvas",p:()=>`Reformat every final item into text2qti plain-text format so I can convert it to a Canvas QTI file. Follow these rules exactly:
+ {t:"QTI via text2qti",d:"Best for bulk import into Canvas",p:()=>`Use only the ${setSize()} accepted items (items 1 to ${setSize()}). Do not write, add, or invent any new items. If any of these items is missing from our conversation, list its number instead of creating it.
+
+Reformat every final item into text2qti plain-text format so I can convert it to a Canvas QTI file. Follow these rules exactly:
 - First line: "Quiz title: ${(v("f-course")||"Quiz").replace(/"/g,"")} – ${(v("f-topic")||"Items").replace(/"/g,"")}"
 - Second line: "Quiz description: Practice items aligned to the NPTE-PT content outline."
 - Leave a blank line, then each question numbered "1." "2." etc. followed by the full stem on the same line.
@@ -1340,14 +1351,18 @@ const C=[
 - Under the question, add a general feedback line starting with "..." that contains the rationale and reference.
 - One blank line between questions. No bold, no headings, no extra commentary.
 Output only the formatted text inside one code block.`},
- {t:"Paste into the Canvas editor",d:"For a short quiz built by hand",p:()=>`Reformat the final items so I can paste them one at a time into the Canvas quiz editor. For each item give:
+ {t:"Paste into the Canvas editor",d:"For a short quiz built by hand",p:()=>`Use only the ${setSize()} accepted items (items 1 to ${setSize()}). Do not write, add, or invent any new items. If any of these items is missing from our conversation, list its number instead of creating it.
+
+Reformat the final items so I can paste them one at a time into the Canvas quiz editor. For each item give:
 QUESTION [number] (Multiple Choice, 1 point)
 Question text:
 Answers (mark the correct one with [CORRECT]):
 Correct-answer comment:
 Wrong-answer comment:
 Keep the stem and options exactly as approved. No extra commentary.`},
- {t:"Student remediation sheet",d:"Post after the exam closes",p:()=>`Using the final items, write a student-facing remediation sheet: for each item, the concept tested, the key reasoning step, the common error behind each distractor, and the CPG or textbook reference to review. Do not include the full stems or options.`}
+ {t:"Student remediation sheet",d:"Post after the exam closes",p:()=>`Use only the ${setSize()} accepted items (items 1 to ${setSize()}). Do not write, add, or invent any new items. If any of these items is missing from our conversation, list its number instead of creating it.
+
+Using the final items, write a student-facing remediation sheet: for each item, the concept tested, the key reasoning step, the common error behind each distractor, and the CPG or textbook reference to review. Do not include the full stems or options.`}
 ];
 
 function expertPrompt(){
@@ -1376,7 +1391,7 @@ function bankPrompt(){
   const opts=id=>[...document.querySelectorAll("#"+id+" option")].map(o=>o.textContent.trim()).filter((t,i,a)=>t&&!t.startsWith("Select")&&a.indexOf(t)===i);
   const stages=opts("f-stage"), systems=opts("f-system"), cats=opts("f-cat");
   const blooms=["Remember / understand","Apply","Analyze / evaluate","Remember / apply / analyze (mixed)"];
-  return `Format every final item as one row for our faculty item bank spreadsheet.
+  return `Format every final item as one row for our faculty item bank spreadsheet. Use only the ${setSize()} accepted items (items 1 to ${setSize()}). Do not write, add, or invent any new items. If any of these items is missing from our conversation, list its number instead of creating it.
 
 Output rules:
 - One row per item, tab-separated, inside a single code block. No header row and no commentary.
@@ -1405,7 +1420,9 @@ Output rules:
 Use the exact wording above for columns 7, 8, and 9 so the spreadsheet dropdowns accept the values.\n\nThen, below the code block, list each image or video item by its row number with its media type and media specification, so I can fill in the Media columns of the spreadsheet by hand.`;
 }
 function finalPrompt(){
-  return `We are finished writing items. Compile the final set:
+  return `We are finished writing items. Use only the ${setSize()} accepted items (items 1 to ${setSize()}). Do not write, add, or invent any new items. If any of these items is missing from our conversation, list its number instead of creating it.
+
+Compile the final set:
 1. Every accepted item in its latest revised version, numbered in order, in this format: Item #, NPTE area / category / Bloom's, Stem, A–D, Key${$("#f-rationale").checked?", rationale for each option":", brief rationale"}, Reference.
 2. An answer key list (item number and letter).
 3. A check that each key sits at its assigned letter (${keyList()}) and that numeric options are in ascending order. Fix and list any that do not; for numeric items, change distractor values rather than breaking the order.
@@ -1417,13 +1434,17 @@ Do not change wording that I already approved unless it fixes an error; if you c
 /* render library */
 const openSet=new Set();
 function makeCard(it,id){
-  const label=it.t.replace("#","#"+item());
+  const isLast=it.last&&it.last();
+  const label=(isLast?it.tLast:it.t).replace("#","#"+item());
   const d=document.createElement("details");d.className="pcard"+(it.primary?" primary":"");d.id=id;d.open=openSet.has(id);
   d.innerHTML=`<summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span><span class="t"></span><br><span class="d"></span></span><button type="button" class="btn gold small">Copy</button></summary><div class="body"><pre></pre></div>`;
-  const full=()=>it.p()+LOOP();
-  d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=it.d;d.querySelector("pre").textContent=full();
+  const full=()=>it.p()+(it.last&&it.last()?"":LOOP());
+  d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=isLast?it.dLast:it.d;d.querySelector("pre").textContent=full();
   d.querySelector("summary .btn").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();copy(full(),label);flash(d);
-    if(it.adv){$("#f-item").value=+item()+1;refresh();toast(`Copied. Now working on item ${item()}.`);}});
+    if(it.adv){
+      if(+item()>=setSize()){state.unlocked=Math.max(state.unlocked,3);save();toast(`Copied. That was the last of ${setSize()} items. Continue to Step 3.`);$("#done-note").hidden=false;}
+      else{$("#f-item").value=+item()+1;refresh();toast(`Copied. Now working on item ${item()} of ${setSize()}.`);}
+    }});
   d.addEventListener("toggle",()=>{d.open?openSet.add(id):openSet.delete(id);});
   return d;
 }
@@ -1441,6 +1462,7 @@ function renderLib(){
     sec.appendChild(wrap);more.appendChild(sec);
   });
   document.querySelectorAll(".inum").forEach(e=>e.textContent=item());
+  $("#set-n").textContent=setSize();
   const cb=$("#canvas-btns");cb.innerHTML="";
   C.forEach((it,i)=>{
     const b=document.createElement("button");b.type="button";b.className="pbtn";b.id="c-"+i;
