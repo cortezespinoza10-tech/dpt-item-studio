@@ -266,6 +266,12 @@ select option{color:var(--ink)}
 .linkbtn{all:unset;cursor:pointer;color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}
 .linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+/* answer key positions */
+.keybox{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.keys{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;flex:1 1 300px;min-width:0}
+.keys li{display:inline-flex;align-items:baseline;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 7px;font:500 .8rem var(--mono);color:var(--muted)}
+.keys li b{font:700 .95rem var(--display);color:var(--ink)}
+
 /* prompt library */
 .libtools{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
 .libtools .field{width:150px}
@@ -522,6 +528,14 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
                 <option value="standard">Standard: stem 70–100 words, options up to 12 words</option>
                 <option value="extended">Extended NPTE vignette: stem 100–150 words, options up to 15 words</option>
               </select></div>
+            <div class="field span">
+              <span style="font-weight:600;font-size:.92rem">Correct answer positions <small style="font-weight:400;color:var(--muted)">(shuffled for you, balanced across A–D)</small></span>
+              <div class="keybox">
+                <ol class="keys" id="key-list" aria-label="Correct answer letter for each item"></ol>
+                <button type="button" class="btn quiet small" id="btn-reshuffle">Reshuffle</button>
+              </div>
+              <span class="hint" id="key-summary"></span>
+            </div>
             <div class="field span"><label for="f-setting">Practice settings to sample</label>
               <input id="f-setting" placeholder="e.g., Outpatient orthopedic, acute care, direct access"></div>
             <div class="field span"><label for="f-extra">Additional parameters <small>(optional)</small></label>
@@ -724,6 +738,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="sub">
           <h3>Format for Canvas</h3>
           <div class="tip"><b>Image and video items</b><span>After importing, open each media item in the Canvas quiz editor and insert the image or video where the stem shows [IMAGE] or [VIDEO]. Upload media to Canvas or Canvas Studio, not a public link. Use only photos and clips of consenting actors or students, never identifiable patients, and add the text alternative as the image's alt text.</span></div>
+          <div class="tip"><b>Answer positions</b><span>The keys were placed at shuffled, balanced letters while you wrote. For extra protection, turn on answer shuffling in the Canvas quiz settings so each student also sees the options in a different order.</span></div>
           <div class="tip"><b>Which path?</b><span>Most faculty use QTI import: it brings in every item, its key, and feedback at once. Pasting by hand works for a short quiz.</span></div>
           <div class="pbtns" id="canvas-btns"></div>
           <details class="prompt"><summary>How to import a QTI file into Canvas</summary><pre>1. Paste the "QTI via text2qti" prompt after your final set. Save the AI's
@@ -796,8 +811,8 @@ const state={purpose:"course",unlocked:1,step:1,clips:[]};
 const KEY="dpt-item-studio-v2";
 const fields=["f-start","f-media","f-cdesc","f-length","x-part","x-action","x-input","f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
 
-function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.xkeep=$("#x-keep").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if("xkeep" in d)$("#x-keep").checked=d.xkeep;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
+function save(){try{const d={keys:state.keys,purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.xkeep=$("#x-keep").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;if(Array.isArray(d.keys))state.keys=d.keys;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if("xkeep" in d)$("#x-keep").checked=d.xkeep;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
 
 const v=id=>($("#"+id).value||"").trim();
 const item=()=>v("f-item")||"1";
@@ -903,7 +918,37 @@ ${MEDIA_RULES}
 - Add a Media column to the plan table (None, Image, or Video).
 `;
 }
-const PLAN_COLS="item number, specific focus, NPTE system/area, content category, Bloom's level, and practice setting";
+const PLAN_COLS="item number, specific focus, NPTE system/area, content category, Bloom's level, practice setting, and assigned key letter";
+/* ---------- randomized, balanced answer key positions ---------- */
+const LETTERS=["A","B","C","D"];
+function rnd(n){try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;}catch(e){return Math.floor(Math.random()*n);}}
+function shuffleKeys(n){
+  /* equal counts of A–D (remainder random), shuffled, never the same letter more than twice in a row */
+  for(let tries=0;tries<500;tries++){
+    const bag=[];for(let i=0;i<n;i++)bag.push(LETTERS[i%4]);
+    const extra=n%4;if(extra){const pick=[...LETTERS];for(let i=pick.length-1;i>0;i--){const j=rnd(i+1);[pick[i],pick[j]]=[pick[j],pick[i]];}for(let i=0;i<extra;i++)bag[n-extra+i]=pick[i];}
+    for(let i=bag.length-1;i>0;i--){const j=rnd(i+1);[bag[i],bag[j]]=[bag[j],bag[i]];}
+    if(!bag.some((x,i)=>i>1&&x===bag[i-1]&&x===bag[i-2]))return bag;
+  }
+  return Array.from({length:n},(_,i)=>LETTERS[i%4]);
+}
+const setSize=()=>+v("f-n")||10;
+function ensureKeys(force){
+  const n=setSize();
+  if(force||!Array.isArray(state.keys)||state.keys.length!==n)state.keys=shuffleKeys(n);
+}
+function keyFor(i){
+  ensureKeys();
+  while(state.keys.length<i)state.keys.push(...shuffleKeys(4));
+  return state.keys[i-1];
+}
+const keyList=()=>state.keys.map((k,i)=>`${i+1}: ${k}`).join(", ");
+function renderKeys(){
+  ensureKeys();
+  $("#key-list").innerHTML=state.keys.map((k,i)=>`<li>${i+1}<b>${k}</b></li>`).join("");
+  const c={A:0,B:0,C:0,D:0};state.keys.forEach(k=>c[k]++);
+  $("#key-summary").textContent=`A ${c.A} · B ${c.B} · C ${c.C} · D ${c.D}. The AI places each correct answer at its assigned letter, so the keys in Canvas don't cluster on one letter.`;
+}
 const startMode=()=>v("f-start")||"planitem";
 function firstReply(){
   const n=v("f-n")||"10";
@@ -913,7 +958,7 @@ function firstReply(){
 2. Then, in the same reply, item 1 written from the plan, in the format below.
 3. End with the Studio line for item 1.
 If I later ask to change the plan, update it and continue from the current item.`,
-    item:`Your first reply: do not show a plan. Write item 1 now, in the format below, choosing a focus that fits the course, topic, and objectives. Keep track of the NPTE area, content category, Bloom's level, and key letter of each item yourself, so the full set of ${n} items stays balanced. End with the Studio line for item 1.`,
+    item:`Your first reply: do not show a plan. Write item 1 now, in the format below, choosing a focus that fits the course, topic, and objectives. Keep track of the NPTE area, content category, and Bloom's level of each item yourself, so the full set of ${n} items stays balanced. End with the Studio line for item 1.`,
     plan:`Your first reply: only a short plan for all ${n} items as a table with these columns: ${PLAN_COLS}. Do not write any items yet. End that reply with this line instead of the Studio line:
 "Next: return to the DPT Item Writing Studio, Step 2, and copy Write item 1 when the plan looks right."`
   }[startMode()];
@@ -1192,7 +1237,8 @@ Item-writing standards:
 - Stems are clinical vignettes when the objective allows. Include details a physical therapist would actually have: age, setting, onset or mechanism, relevant history and medications, vital signs, and exam findings in real units (ROM in degrees, MMT grades 0–5, NPRS 0–10, standardized outcome measures with MCID where relevant).
 - Remove window dressing: every detail in the stem should be needed or a deliberate, realistic distractor.
 - Distractors are plausible, homogeneous in length and grammar, and reflect common student errors. No "all of the above," "none of the above," absolute terms, grammatical cues, or longest-answer-is-correct patterns.
-- Vary the key position across A–D.
+- Correct answer positions were assigned at random. Put each item's correct answer at its assigned letter and arrange the distractors around it: ${keyList()}.
+- Keep every key at its assigned letter in all revisions unless I ask you to move it.
 - Base clinical content on current evidence and APTA academy clinical practice guidelines. If you are not certain a fact is current and correct, mark it [verify].
 - Use person-first, unbiased language and vary patient demographics without stereotyping.
 
@@ -1232,7 +1278,8 @@ const QC=()=>`Run a quality check on item ${item()}. Report it as a short table 
 5. Cognitive level: matches the intended Bloom's level
 6. Course scope: name the learning objective it maps to
 7. Length: within the limits from my first message
-8. Bias and language: person-first, no stereotypes, no unnecessary reading load
+8. Key position: the correct answer is option ${keyFor(+item())}, as assigned
+9. Bias and language: person-first, no stereotypes, no unnecessary reading load
 If anything needs fixing, show the corrected item below the table. Do not change the key unless it is wrong, and say so if it is.`;
 const SECTIONS={
  check:[{t:"Quality check for item #",d:"Flaws, accuracy, NPTE alignment, level, scope, length, bias",p:QC,primary:true}],
@@ -1242,7 +1289,7 @@ const SECTIONS={
   {t:"Make the vignette realistic",d:"Exam data a PT would actually see",p:()=>`Revise the stem of item ${item()} so it reads like a real patient encounter. Add realistic history and examination data with proper units (vitals, ROM in degrees, MMT grades, special tests with results, outcome measure scores). Keep only details that matter to the answer or serve as realistic distractors, and stay within the length limits.`},
   {t:"Raise difficulty",d:"More reasoning, not obscure facts",p:()=>`Make item ${item()} harder by requiring a higher level of reasoning (for example, prioritizing among several reasonable actions, or interpreting combined exam findings), not by adding obscure facts. Explain what changed.`},
   {t:"Lower difficulty",d:"For earlier-stage students",p:()=>`Make item ${item()} more accessible for students at this curriculum stage. Keep it at the application level if possible, simplify the vignette, and make the key more clearly the best answer. Explain what changed.`},
-  {t:"Replace item #",d:"Same objective, a different case",p:()=>`Replace item ${item()} with a new item that tests the same objective and NPTE category but uses a different patient, setting, and clinical presentation. Keep the same format.`}
+  {t:"Replace item #",d:"Same objective, a different case",p:()=>`Replace item ${item()} with a new item that tests the same objective and NPTE category but uses a different patient, setting, and clinical presentation. Keep the same format, with the correct answer at option ${keyFor(+item())}.`}
  ],
  more:[
   {h:"Stem and options",items:[
@@ -1251,7 +1298,7 @@ const SECTIONS={
    {t:"Make options homogeneous",d:"Length, grammar, category",p:()=>`Revise the options in item ${item()} so all four are similar in length, grammatical structure, and category (for example, all interventions, or all diagnoses). Make sure the key does not stand out.`},
    {t:"Turn into a case cluster",d:"2–4 items on one vignette",p:()=>`Expand item ${item()} into an NPTE-style vignette cluster: one shared patient case followed by 3 items that progress through examination, evaluation or diagnosis, and intervention. Each item must be answerable independently so that missing one does not give away another.`},
    {t:"Change the practice setting",d:"Acute, SNF, home, peds, sports",p:()=>`Rewrite item ${item()} so the same concept is tested in a different practice setting (choose one we have not used yet: acute care, inpatient rehab, skilled nursing, home health, pediatrics, or sports). Adjust the vignette and options so they fit that setting's realities.`},
-   {t:"Balance key positions",d:"Across the items so far",p:()=>`List the key letter for every item written so far. If any letter is over- or under-used, reorder options in specific items to balance the distribution, and tell me which items changed.`}
+   {t:"Check key positions",d:"Against the assigned letters",p:()=>`List the correct answer letter for every item written so far and compare it with the assigned positions: ${keyList()}. For any item whose key is at the wrong letter, move the options so the key sits at its assigned letter, and show those items.`}
   ]},
   {h:"Images and video (2024 NPTE)",items:[
    {t:"Convert item # to an image item",d:"Photo, radiograph, graph, or ECG",p:()=>`Convert item ${item()} into an image item. Choose the image that a physical therapist would actually look at to make this decision.
@@ -1279,9 +1326,9 @@ ${MEDIA_RULES.replace(/\n- Place[\s\S]*$/,"")}`},
    {t:"Bias and language check",d:"Person-first, fair to all",p:()=>`Review item ${item()} for bias and language: person-first wording, stereotyped demographics, regional or cultural idioms, unnecessary reading load, and content that could disadvantage English-language learners. Suggest revisions.`}
   ]}
  ],
- accept:[{t:"Accept item #, write the next one",adv:true,primary:true,d:"Locks this item in and asks for the next",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format. Stop after that item.`}]
+ accept:[{t:"Accept item #, write the next one",adv:true,primary:true,d:"Locks this item in and asks for the next",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format, with the correct answer at option ${keyFor(+item()+1)}. Stop after that item.`}]
 };
-const WRITE_ITEM=()=>`${startMode()==="plan"?"I approve the plan. ":""}Write item ${item()} now, following the standards and format from my first message. Stop after this one item.`;
+const WRITE_ITEM=()=>`${startMode()==="plan"?"I approve the plan. ":""}Write item ${item()} now, following the standards and format from my first message, with the correct answer at option ${keyFor(+item())}. Stop after this one item.`;
 
 const C=[
  {t:"QTI via text2qti",d:"Best for bulk import into Canvas",p:()=>`Reformat every final item into text2qti plain-text format so I can convert it to a Canvas QTI file. Follow these rules exactly:
@@ -1360,7 +1407,7 @@ function finalPrompt(){
   return `We are finished writing items. Compile the final set:
 1. Every accepted item in its latest revised version, numbered in order, in this format: Item #, NPTE area / category / Bloom's, Stem, A–D, Key${$("#f-rationale").checked?", rationale for each option":", brief rationale"}, Reference.
 2. An answer key list (item number and letter).
-3. A count of keys by letter (A–D), and reorder options if any letter is over-represented.
+3. A check that each key sits at its assigned letter (${keyList()}). Fix and list any that do not.
 4. A blueprint table: rows are NPTE system/area, columns are content categories, with Bloom's level counts in each cell.
 5. A list of every statement marked [verify] so I can check it before use.
 Do not change wording that I already approved unless it fixes an error; if you change anything, list the change.`;
@@ -1438,7 +1485,7 @@ function show(n){
 function unlock(n){state.unlocked=Math.max(state.unlocked,n);show(n);}
 
 function refresh(){
-  $("#pv-start").textContent=starter();syncStartText();
+  ensureKeys();renderKeys();$("#pv-start").textContent=starter();syncStartText();
   $("#pv-final").textContent=finalPrompt();
   $("#pv-bank").textContent=bankPrompt();
   $("#pv-expert").textContent=expertPrompt();$("#x-num").textContent=item();
@@ -1467,6 +1514,7 @@ $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
 $("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#step-2 .pcard, #step-2 details.opt").forEach(d=>d.open=true));
 $("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#step-2 .pcard, #step-2 details.opt").forEach(d=>d.open=false));
+$("#btn-reshuffle").addEventListener("click",()=>{ensureKeys(true);refresh();toast("Answer positions reshuffled. Copy a fresh starter prompt.");});
 $("#btn-writeitem").addEventListener("click",()=>copy(WRITE_ITEM()+LOOP(),`Write item #${item()}`));
 wireDrop("syl-drop","syl-file",onSyllabus);
 wireDrop("src-drop","src-file",onSources);
