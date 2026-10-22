@@ -569,6 +569,12 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
 
         <div class="sub">
           <h3>F. Start the conversation with your AI tool</h3>
+          <div class="field" style="max-width:560px"><label for="f-start">What the AI's first reply should be</label>
+            <select id="f-start">
+              <option value="planitem" selected>The plan and item 1 together (recommended)</option>
+              <option value="item">Item 1 right away, no plan</option>
+              <option value="plan">The plan only, so I can approve it first</option>
+            </select></div>
           <details class="prompt"><summary>Starter prompt preview</summary><pre id="pv-start"></pre></details>
           <div class="seq" aria-label="Three steps to start">
             <div class="seq-step" id="seq-1" data-s="ready">
@@ -583,13 +589,13 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
               <ul>
                 <li>If you did the optional setup in E, open that notebook (signed in with your university account). Otherwise, open any AI tool your program allows and start a new chat.</li>
                 <li>Paste the prompt and send it.</li>
-                <li>The AI replies with an <b>item plan</b>. Review it, edit anything you want changed, then approve it.</li>
+                <li id="seq-2-reply">The AI replies with a short <b>item plan</b> and <b>item 1</b>.</li>
               </ul>
             </div>
             <div class="seq-arrow" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
             <div class="seq-step" id="seq-3">
               <div class="seq-top"><span class="seq-num">3</span><span class="seq-title">Come back here</span></div>
-              <p class="say">Once the plan is approved, continue to Step 2 for the prompts that write and refine each item.</p>
+              <p class="say" id="seq-3-say">Continue to Step 2 to refine, audit, or accept item 1.</p>
               <button type="button" class="btn primary" id="btn-go2">Continue to writing items →</button>
             </div>
           </div>
@@ -617,7 +623,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
         <div class="sub" style="gap:10px">
           <h3>One item at a time</h3>
           <ol class="loop" aria-label="The loop for each item">
-            <li><b>Write item #</b>Copy "Approve plan, write item #" (first item) and paste it in your AI chat.</li>
+            <li><b>Get item #</b><span id="loop-1">Item 1 comes back with your starter prompt. Later items come from "Accept item #, write next".</span></li>
             <li><b>Refine and audit</b>Use any prompt below, including your own clinical input.</li>
             <li><b>Accept</b>Copy "Accept item #, write next". The item number here moves up by one.</li>
             <li class="back"><b>Come back here</b>The AI stops after every item and points you back to this page.</li>
@@ -755,7 +761,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
 const $=s=>document.querySelector(s);
 const state={purpose:"course",unlocked:1,step:1,clips:[]};
 const KEY="dpt-item-studio-v2";
-const fields=["f-media","f-cdesc","f-length","x-part","x-action","x-input","f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
+const fields=["f-start","f-media","f-cdesc","f-length","x-part","x-action","x-input","f-srcnames","f-srcmode","f-course","f-stage","f-topic","f-obj","f-system","f-cat","f-n","f-bloom","f-format","f-setting","f-extra","f-item","f-url"];
 
 function save(){try{const d={purpose:state.purpose,unlocked:state.unlocked,step:state.step,f:{}};fields.forEach(id=>d.f[id]=$("#"+id).value);d.f.rat=$("#f-rationale").checked;d.usesrc=$("#f-usesrc").checked;d.xkeep=$("#x-keep").checked;d.src={};document.querySelectorAll(".src").forEach(c=>d.src[c.id]=c.checked);localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;state.purpose=d.purpose||"course";state.unlocked=d.unlocked||1;state.step=d.step||1;fields.forEach(id=>{if(d.f&&d.f[id]!=null)$("#"+id).value=d.f[id];});if(d.f&&"rat" in d.f)$("#f-rationale").checked=d.f.rat;if("usesrc" in d)$("#f-usesrc").checked=d.usesrc;if("xkeep" in d)$("#x-keep").checked=d.xkeep;if(d.src)document.querySelectorAll(".src").forEach(c=>{if(c.id in d.src)c.checked=d.src[c.id];});}catch(e){}}
@@ -863,6 +869,27 @@ function mediaBlock(){
 ${MEDIA_RULES}
 - Add a Media column to the plan table (None, Image, or Video).
 `;
+}
+const PLAN_COLS="item number, specific focus, NPTE system/area, content category, Bloom's level, and practice setting";
+const startMode=()=>v("f-start")||"planitem";
+function firstReply(){
+  const n=v("f-n")||"10";
+  return {
+    planitem:`Your first reply:
+1. A short plan for all ${n} items as a table with these columns: ${PLAN_COLS}.
+2. Then, in the same reply, item 1 written from the plan, in the format below.
+3. End with the Studio line for item 1.
+If I later ask to change the plan, update it and continue from the current item.`,
+    item:`Your first reply: do not show a plan. Write item 1 now, in the format below, choosing a focus that fits the course, topic, and objectives. Keep track of the NPTE area, content category, Bloom's level, and key letter of each item yourself, so the full set of ${n} items stays balanced. End with the Studio line for item 1.`,
+    plan:`Your first reply: only a short plan for all ${n} items as a table with these columns: ${PLAN_COLS}. Do not write any items yet. End that reply with this line instead of the Studio line:
+"Next: return to the DPT Item Writing Studio, Step 2, and copy Write item 1 when the plan looks right."`
+  }[startMode()];
+}
+function syncStartText(){
+  const m=startMode();
+  $("#seq-2-reply").innerHTML={planitem:"The AI replies with a short <b>item plan</b> and <b>item 1</b>.",item:"The AI replies with <b>item 1</b>.",plan:"The AI replies with an <b>item plan</b> only. Review it and ask for any changes in the chat."}[m];
+  $("#seq-3-say").textContent=m==="plan"?"When the plan looks right, continue to Step 2 and copy \"Write item 1\".":"Continue to Step 2 to refine, audit, or accept item 1.";
+  $("#loop-1").textContent=m==="plan"?"Copy \"Write item #\" to approve the plan and get item 1. Later items come from \"Accept item #, write next\".":"Item 1 comes back with your starter prompt. Later items come from \"Accept item #, write next\".";
 }
 const RETURN_LINE=()=>`Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item ${item()}.`;
 const LOOP=()=>`\n\nWhen you finish what this message asks, stop. Do not go on to any other item. End your reply with the Studio line from my first message.`;
@@ -1144,14 +1171,15 @@ Length limits (follow strictly; students read many items under time pressure):
 - Before you send an item, check it against these limits and cut anything over.
 
 Working rhythm (follow every time):
-- Write only one item per reply, then stop. Never write the next item until I send a message that says "I accept item" or "Write item".
-- After the plan, and after every item or revision, end your reply with this line on its own:
-"${RETURN_LINE().replace(/item \d+\.$/,"item [number].")}"
+- Write only one item per reply, then stop. After your first reply, never write a new item until I send a message that says "I accept item" or "Write item".
+- After every reply that contains a full item, end with this line on its own, using the number of the item you just wrote:
+"Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item [number]."
+- Only use that line when your reply contains a full item.
 - When I paste a revision request, change only what it asks for and show the full revised item.
 
-Before writing any items, give me a short plan as a table: item number, specific focus, NPTE system/area, content category, Bloom's level, and practice setting. Then stop, end with the Studio line, and wait for my approval.
+${firstReply()}
 
-After I approve, write one item at a time in this format:
+Write each item in this format:
 Item #:
 NPTE area / category / Bloom's:
 Stem:
@@ -1165,7 +1193,7 @@ Key:${rat}
 
 const L=[
  {h:"Accept or replace",tag:"pace",items:[
-  {t:"Approve plan, write item #",d:"Start writing from the approved plan",p:()=>`I approve the plan. Write item ${item()} now, following the standards and format from my first message. Stop after this one item.`},
+  {t:"Write item #",d:"Use after a plan-only reply, or if the AI stopped without an item",p:()=>`${startMode()==="plan"?"I approve the plan. ":""}Write item ${item()} now, following the standards and format from my first message. Stop after this one item.`},
   {t:"Accept item #, write next",adv:true,d:"Lock it in and move on",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format. Stop after that item.`},
   {t:"Replace item #",d:"Same objective, a different case",p:()=>`Replace item ${item()} with a new item that tests the same objective and NPTE category but uses a different patient, setting, and clinical presentation. Keep the same format.`},
   {t:"Raise difficulty",d:"Push it up a Bloom's level",p:()=>`Make item ${item()} harder by requiring a higher level of reasoning (for example, prioritizing among several reasonable actions, or interpreting combined exam findings), not by adding obscure facts. Explain what changed.`},
@@ -1360,7 +1388,7 @@ function show(n){
 function unlock(n){state.unlocked=Math.max(state.unlocked,n);show(n);}
 
 function refresh(){
-  $("#pv-start").textContent=starter();
+  $("#pv-start").textContent=starter();syncStartText();
   $("#pv-final").textContent=finalPrompt();
   $("#pv-bank").textContent=bankPrompt();
   $("#pv-expert").textContent=expertPrompt();$("#x-num").textContent=item();
