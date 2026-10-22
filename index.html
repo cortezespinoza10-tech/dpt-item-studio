@@ -238,6 +238,34 @@ select option{color:var(--ink)}
 .filelist .fm{grid-column:1/-1;color:var(--muted);font-size:.84rem}
 .filelist .check{font-size:.86rem}
 
+/* step 2 layout */
+.itembar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--sunk);border-radius:10px;padding:10px 14px}
+.itembar label{font-family:var(--display);font-weight:700;font-size:1rem}
+.itembar input{width:72px;text-align:center;font:700 1.05rem var(--display);padding:6px}
+.itembar .hint{flex:1 1 260px;margin-left:6px}
+@media (max-width:640px){.itembar .hint{flex-basis:100%;margin-left:0}}
+.stage{display:flex;flex-direction:column;gap:12px;padding-top:18px;border-top:1px solid var(--line)}
+.stage-h{display:flex;gap:12px;align-items:flex-start}
+.stage-h h3{font-size:1.15rem}
+.stage-h .hint{margin-top:2px}
+.stage-n{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 .95rem var(--display);background:var(--ink);color:var(--surface)}
+.fixgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+@media (max-width:700px){.fixgrid{grid-template-columns:1fr}}
+.opt{border:1px dashed var(--line);border-radius:10px;background:var(--surface)}
+.opt[open]{border-style:solid;border-color:var(--ink)}
+.opt>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.opt>summary::-webkit-details-marker{display:none}
+.opt>summary::after{content:"Show";font-size:.86rem;color:var(--muted);flex:none}
+.opt[open]>summary::after{content:"Hide"}
+.opt>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:10px}
+.opt>summary b{font-family:var(--display);font-size:1rem;display:block}
+.opt-sub{display:block;font-size:.86rem;color:var(--muted)}
+.opt-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:14px}
+.opt-body .group{border-top:0;padding-top:0}
+.pcard.primary{border:1.5px solid var(--ink)}
+.linkbtn{all:unset;cursor:pointer;color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
 /* prompt library */
 .libtools{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
 .libtools .field{width:150px}
@@ -595,7 +623,7 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
             <div class="seq-arrow" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
             <div class="seq-step" id="seq-3">
               <div class="seq-top"><span class="seq-num">3</span><span class="seq-title">Come back here</span></div>
-              <p class="say" id="seq-3-say">Continue to Step 2 to refine, audit, or accept item 1.</p>
+              <p class="say" id="seq-3-say">Continue to Step 2 to check, improve, or accept item 1.</p>
               <button type="button" class="btn primary" id="btn-go2">Continue to writing items →</button>
             </div>
           </div>
@@ -613,54 +641,59 @@ footer{margin-top:30px;font-size:.85rem;color:var(--muted);display:flex;justify-
           </div>
         </div>
 
-        <div class="anatomy" aria-label="Parts of an item">
-          <div><b>Stem</b>The vignette: patient, setting, findings</div>
-          <div><b>Lead-in</b>The question, answerable with options covered</div>
-          <div><b>Key</b>The one best answer</div>
-          <div><b>Distractors</b>Plausible errors a student would make</div>
+        <div class="itembar">
+          <label for="f-item">Working on item</label>
+          <button type="button" class="btn quiet small" id="btn-prev" aria-label="Previous item">−</button>
+          <input id="f-item" type="number" min="1" value="1">
+          <button type="button" class="btn quiet small" id="btn-next" aria-label="Next item">+</button>
+          <span class="hint">Each prompt below is written for this item. The AI stops after every item and sends you back here.</span>
         </div>
 
-        <div class="sub" style="gap:10px">
-          <h3>One item at a time</h3>
-          <ol class="loop" aria-label="The loop for each item">
-            <li><b>Get item #</b><span id="loop-1">Item 1 comes back with your starter prompt. Later items come from "Accept item #, write next".</span></li>
-            <li><b>Refine and audit</b>Use any prompt below, including your own clinical input.</li>
-            <li><b>Accept</b>Copy "Accept item #, write next". The item number here moves up by one.</li>
-            <li class="back"><b>Come back here</b>The AI stops after every item and points you back to this page.</li>
-          </ol>
+        <div class="stage">
+          <div class="stage-h"><span class="stage-n">1</span><div><h3>Check item <span class="inum">1</span></h3><p class="hint">One prompt runs every quality check and lists what needs fixing.</p></div></div>
+          <div class="plist" id="lib-check"></div>
         </div>
 
-        <div class="libtools">
-          <div class="field"><label for="f-item">Item number</label><input id="f-item" type="number" min="1" value="1"></div>
-          <div class="row"><button type="button" class="btn quiet small" id="btn-prev">− Prev</button><button type="button" class="btn quiet small" id="btn-next">Next +</button></div>
+        <div class="stage">
+          <div class="stage-h"><span class="stage-n">2</span><div><h3>Improve item <span class="inum">1</span></h3><p class="hint">Use only what the check flagged, or skip to step 3 if the item is ready.</p></div></div>
+          <div class="fixgrid" id="lib-fix"></div>
+          <details class="opt" id="opt-expert">
+            <summary><span><b>Add your own clinical expertise</b><span class="opt-sub">Optional. Correct or enrich the item with what you know from practice.</span></span></summary>
+            <div class="opt-body">
+            <p class="hint" style="margin:0">Use this when the AI's version misses something you know from practice: how a test is really performed, what a patient in this setting actually presents with, or why a distractor would not fool a student.</p>
+            <div class="grid2">
+              <div class="field"><label for="x-part">Part of item #<span id="x-num">1</span> to change</label>
+                <select id="x-part">
+                  <option>Whole item</option><option selected>Stem (vignette)</option><option>Lead-in question</option>
+                  <option>Option A</option><option>Option B</option><option>Option C</option><option>Option D</option>
+                  <option>Key</option><option>Rationale</option>
+                </select></div>
+              <div class="field"><label for="x-action">What the AI should do</label>
+                <select id="x-action">
+                  <option value="revise" selected>Revise it to reflect my input</option>
+                  <option value="replace">Rewrite this part around my input</option>
+                  <option value="distractor">Turn my input into a better distractor</option>
+                  <option value="check">Check my input against the sources, then revise</option>
+                </select></div>
+              <div class="field span"><label for="x-input">Your clinical input</label>
+                <textarea id="x-input" rows="3" placeholder="e.g., In outpatient practice, a patient with S1 radiculopathy usually also shows weak heel raises. Add single-leg heel raise: 4 reps on the right vs. 20 on the left, and remove the hip flexion finding."></textarea></div>
+            </div>
+            <label class="check"><input type="checkbox" id="x-keep" checked> Keep every other part of the item exactly as it is</label>
+            <details class="prompt"><summary>Prompt preview</summary><pre id="pv-expert"></pre></details>
+            <div class="row"><button type="button" class="btn gold" id="btn-expert">Copy expertise prompt</button></div>
+            </div>
+          </details>
+          <details class="opt" id="opt-more">
+            <summary><span><b>More prompts</b><span class="opt-sub">Stem and option fixes, image and video items, and single checks.</span></span></summary>
+            <div class="opt-body" id="lib-more"></div>
+          </details>
         </div>
 
-        <section class="expert" aria-labelledby="ex-h">
-          <h3 id="ex-h">Add your clinical expertise <span class="tag">your input</span></h3>
-          <p class="hint">Use this when the AI's version misses something you know from practice: how a test is really performed, what a patient in this setting actually presents with, or why a distractor would not fool a student.</p>
-          <div class="grid2">
-            <div class="field"><label for="x-part">Part of item #<span id="x-num">1</span> to change</label>
-              <select id="x-part">
-                <option>Whole item</option><option selected>Stem (vignette)</option><option>Lead-in question</option>
-                <option>Option A</option><option>Option B</option><option>Option C</option><option>Option D</option>
-                <option>Key</option><option>Rationale</option>
-              </select></div>
-            <div class="field"><label for="x-action">What the AI should do</label>
-              <select id="x-action">
-                <option value="revise" selected>Revise it to reflect my input</option>
-                <option value="replace">Rewrite this part around my input</option>
-                <option value="distractor">Turn my input into a better distractor</option>
-                <option value="check">Check my input against the sources, then revise</option>
-              </select></div>
-            <div class="field span"><label for="x-input">Your clinical input</label>
-              <textarea id="x-input" rows="3" placeholder="e.g., In outpatient practice, a patient with S1 radiculopathy usually also shows weak heel raises. Add single-leg heel raise: 4 reps on the right vs. 20 on the left, and remove the hip flexion finding."></textarea></div>
-          </div>
-          <label class="check"><input type="checkbox" id="x-keep" checked> Keep every other part of the item exactly as it is</label>
-          <details class="prompt"><summary>Prompt preview</summary><pre id="pv-expert"></pre></details>
-          <div class="row"><button type="button" class="btn gold" id="btn-expert">Copy expertise prompt</button></div>
-        </section>
-
-        <div id="library"></div>
+        <div class="stage">
+          <div class="stage-h"><span class="stage-n">3</span><div><h3>Accept item <span class="inum">1</span></h3><p class="hint">Copying this moves the item number here up by one.</p></div></div>
+          <div class="plist" id="lib-accept"></div>
+          <p class="hint" style="margin:0">No item in the AI's reply yet? <button type="button" class="linkbtn" id="btn-writeitem">Copy "Write item <span class="inum">1</span>"</button></p>
+        </div>
 
         <div class="row" style="justify-content:flex-end">
           <button type="button" class="btn primary" id="btn-go3">I'm done writing items →</button>
@@ -888,10 +921,10 @@ If I later ask to change the plan, update it and continue from the current item.
 function syncStartText(){
   const m=startMode();
   $("#seq-2-reply").innerHTML={planitem:"The AI replies with a short <b>item plan</b> and <b>item 1</b>.",item:"The AI replies with <b>item 1</b>.",plan:"The AI replies with an <b>item plan</b> only. Review it and ask for any changes in the chat."}[m];
-  $("#seq-3-say").textContent=m==="plan"?"When the plan looks right, continue to Step 2 and copy \"Write item 1\".":"Continue to Step 2 to refine, audit, or accept item 1.";
-  $("#loop-1").textContent=m==="plan"?"Copy \"Write item #\" to approve the plan and get item 1. Later items come from \"Accept item #, write next\".":"Item 1 comes back with your starter prompt. Later items come from \"Accept item #, write next\".";
+  $("#seq-3-say").textContent=m==="plan"?"When the plan looks right, continue to Step 2 and copy \"Write item 1\" at the bottom.":"Continue to Step 2 to check, improve, and accept item 1.";
+
 }
-const RETURN_LINE=()=>`Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item ${item()}.`;
+const RETURN_LINE=()=>`Next: return to the DPT Item Writing Studio, Step 2, to check, improve, or accept item ${item()}.`;
 const LOOP=()=>`\n\nWhen you finish what this message asks, stop. Do not go on to any other item. End your reply with the Studio line from my first message.`;
 
 /* ---------- file reading (all in the browser) ---------- */
@@ -1173,7 +1206,7 @@ Length limits (follow strictly; students read many items under time pressure):
 Working rhythm (follow every time):
 - Write only one item per reply, then stop. After your first reply, never write a new item until I send a message that says "I accept item" or "Write item".
 - After every reply that contains a full item, end with this line on its own, using the number of the item you just wrote:
-"Next: return to the DPT Item Writing Studio, Step 2, to refine, audit, or accept item [number]."
+"Next: return to the DPT Item Writing Studio, Step 2, to check, improve, or accept item [number]."
 - Only use that line when your reply contains a full item.
 - When I paste a revision request, change only what it asks for and show the full revised item.
 
@@ -1191,53 +1224,64 @@ Key:${rat}
 - Reference: ${mode()==="none"?"CPG or textbook source, marked [verify] if uncertain":"uploaded source with page, slide, or section"}${v("f-media")&&v("f-media")!=="none"?"\nFor an image or video item, add the media specification:\n"+MEDIA_SPEC:""}${sourceTextBlock()}`;
 }
 
-const L=[
- {h:"Accept or replace",tag:"pace",items:[
-  {t:"Write item #",d:"Use after a plan-only reply, or if the AI stopped without an item",p:()=>`${startMode()==="plan"?"I approve the plan. ":""}Write item ${item()} now, following the standards and format from my first message. Stop after this one item.`},
-  {t:"Accept item #, write next",adv:true,d:"Lock it in and move on",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format. Stop after that item.`},
-  {t:"Replace item #",d:"Same objective, a different case",p:()=>`Replace item ${item()} with a new item that tests the same objective and NPTE category but uses a different patient, setting, and clinical presentation. Keep the same format.`},
-  {t:"Raise difficulty",d:"Push it up a Bloom's level",p:()=>`Make item ${item()} harder by requiring a higher level of reasoning (for example, prioritizing among several reasonable actions, or interpreting combined exam findings), not by adding obscure facts. Explain what changed.`},
-  {t:"Lower difficulty",d:"For earlier-stage students",p:()=>`Make item ${item()} more accessible for students at this curriculum stage. Keep it at the application level if possible, simplify the vignette, and make the key more clearly the best answer. Explain what changed.`}
- ]},
- {h:"Refine the stem",tag:"vignette",items:[
-  {t:"Make the vignette realistic",d:"Add the exam data a PT would see",p:()=>`Revise the stem of item ${item()} so it reads like a real patient encounter. Add realistic history and examination data with proper units (vitals, ROM in degrees, MMT grades, special tests with results, outcome measure scores). Keep only details that matter to the answer or serve as realistic distractors.`},
-  {t:"Tighten wording",d:"Enforce the length limits",p:()=>`Item ${item()} is too wordy. Rewrite it to fit the length limits from my first message: stem ${len().stem}, lead-in ${len().lead}, options ${len().opt}. Keep every clinical finding needed to reach the key, the same key, and the same reasoning demand. Turn sentence-length options into short parallel phrases. Show the word count of the stem.`},
-  {t:"Cut window dressing",d:"Shorter stem, same reasoning",p:()=>`Shorten the stem of item ${item()}. Remove details that do not affect the answer and are not deliberate clinical distractors. Keep the reasoning demand the same.`},
-  {t:"Fix the lead-in",d:"Cover-the-options test",p:()=>`Check the lead-in of item ${item()}. A prepared student should be able to answer it with the options covered. If not, rewrite it as a clear, positively worded question (for example, "Which intervention is MOST appropriate at this time?").`},
-  {t:"Turn into a case cluster",d:"2–4 items on one vignette",p:()=>`Expand item ${item()} into an NPTE-style vignette cluster: one shared patient case followed by 3 items that progress through examination, evaluation or diagnosis, and intervention. Each item must be answerable independently so that missing one does not give away another.`},
-  {t:"Change the practice setting",d:"Acute, SNF, home, peds, sports",p:()=>`Rewrite item ${item()} so the same concept is tested in a different practice setting (choose one we have not used yet: acute care, inpatient rehab, skilled nursing, home health, pediatrics, or sports). Adjust the vignette and options so they fit that setting's realities.`}
- ]},
- {h:"Refine the options",tag:"distractors",items:[
-  {t:"Strengthen distractors",d:"Built from real student errors",p:()=>`Improve the distractors in item ${item()}. Each one should reflect a specific, common student misconception or reasoning error in physical therapy practice. For each distractor, name the error it represents.`},
-  {t:"Make options homogeneous",d:"Length, grammar, category",p:()=>`Revise the options in item ${item()} so all four are similar in length, grammatical structure, and category (for example, all interventions, or all diagnoses). Make sure the key does not stand out.`},
-  {t:"Balance key positions",d:"Across the items so far",p:()=>`List the key letter for every item written so far. If any letter is over- or under-used, reorder options in specific items to balance the distribution, and tell me which items changed.`}
- ]},
- {h:"Images and video",tag:"2024 NPTE media",items:[
-  {t:"Convert item # to an image item",d:"Photo, radiograph, graph, or ECG",p:()=>`Convert item ${item()} into an image item. Choose the image that a physical therapist would actually look at to make this decision.
+const QC=()=>`Run a quality check on item ${item()}. Report it as a short table with columns Check, Result (Pass or Fix), and Note:
+1. Item-writing flaws: grammatical cues, absolute terms, longest-correct-answer, word repeats between stem and key, negative stem, "all/none of the above," more than one defensible answer
+2. Cover-the-options: a prepared student could answer the lead-in without seeing the options
+3. Clinical accuracy: ${mode()==="none"?"current APTA academy CPGs and standard DPT references":"the uploaded sources first, then current CPGs"}; cite the source and mark [verify] where unsure
+4. NPTE alignment: system or area, content category, and entry-level scope
+5. Cognitive level: matches the intended Bloom's level
+6. Course scope: name the learning objective it maps to
+7. Length: within the limits from my first message
+8. Bias and language: person-first, no stereotypes, no unnecessary reading load
+If anything needs fixing, show the corrected item below the table. Do not change the key unless it is wrong, and say so if it is.`;
+const SECTIONS={
+ check:[{t:"Quality check for item #",d:"Flaws, accuracy, NPTE alignment, level, scope, length, bias",p:QC,primary:true}],
+ fix:[
+  {t:"Tighten wording",d:"Fit the length limits",p:()=>`Item ${item()} is too wordy. Rewrite it to fit the length limits from my first message: stem ${len().stem}, lead-in ${len().lead}, options ${len().opt}. Keep every clinical finding needed to reach the key, the same key, and the same reasoning demand. Turn sentence-length options into short parallel phrases. Show the word count of the stem.`},
+  {t:"Strengthen distractors",d:"Built from real student errors",p:()=>`Improve the distractors in item ${item()}. Each one should reflect a specific, common student misconception or reasoning error in physical therapy practice, and all four options should match in length and grammar. For each distractor, name the error it represents.`},
+  {t:"Make the vignette realistic",d:"Exam data a PT would actually see",p:()=>`Revise the stem of item ${item()} so it reads like a real patient encounter. Add realistic history and examination data with proper units (vitals, ROM in degrees, MMT grades, special tests with results, outcome measure scores). Keep only details that matter to the answer or serve as realistic distractors, and stay within the length limits.`},
+  {t:"Raise difficulty",d:"More reasoning, not obscure facts",p:()=>`Make item ${item()} harder by requiring a higher level of reasoning (for example, prioritizing among several reasonable actions, or interpreting combined exam findings), not by adding obscure facts. Explain what changed.`},
+  {t:"Lower difficulty",d:"For earlier-stage students",p:()=>`Make item ${item()} more accessible for students at this curriculum stage. Keep it at the application level if possible, simplify the vignette, and make the key more clearly the best answer. Explain what changed.`},
+  {t:"Replace item #",d:"Same objective, a different case",p:()=>`Replace item ${item()} with a new item that tests the same objective and NPTE category but uses a different patient, setting, and clinical presentation. Keep the same format.`}
+ ],
+ more:[
+  {h:"Stem and options",items:[
+   {t:"Cut window dressing",d:"Shorter stem, same reasoning",p:()=>`Shorten the stem of item ${item()}. Remove details that do not affect the answer and are not deliberate clinical distractors. Keep the reasoning demand the same.`},
+   {t:"Fix the lead-in",d:"Cover-the-options test",p:()=>`Check the lead-in of item ${item()}. A prepared student should be able to answer it with the options covered. If not, rewrite it as a clear, positively worded question (for example, "Which intervention is MOST appropriate at this time?").`},
+   {t:"Make options homogeneous",d:"Length, grammar, category",p:()=>`Revise the options in item ${item()} so all four are similar in length, grammatical structure, and category (for example, all interventions, or all diagnoses). Make sure the key does not stand out.`},
+   {t:"Turn into a case cluster",d:"2–4 items on one vignette",p:()=>`Expand item ${item()} into an NPTE-style vignette cluster: one shared patient case followed by 3 items that progress through examination, evaluation or diagnosis, and intervention. Each item must be answerable independently so that missing one does not give away another.`},
+   {t:"Change the practice setting",d:"Acute, SNF, home, peds, sports",p:()=>`Rewrite item ${item()} so the same concept is tested in a different practice setting (choose one we have not used yet: acute care, inpatient rehab, skilled nursing, home health, pediatrics, or sports). Adjust the vignette and options so they fit that setting's realities.`},
+   {t:"Balance key positions",d:"Across the items so far",p:()=>`List the key letter for every item written so far. If any letter is over- or under-used, reorder options in specific items to balance the distribution, and tell me which items changed.`}
+  ]},
+  {h:"Images and video (2024 NPTE)",items:[
+   {t:"Convert item # to an image item",d:"Photo, radiograph, graph, or ECG",p:()=>`Convert item ${item()} into an image item. Choose the image that a physical therapist would actually look at to make this decision.
 ${MEDIA_RULES}
 Show the full revised item, then:
 ${MEDIA_SPEC}`},
-  {t:"Convert item # to a video item",d:"A clip of 10 seconds or less",p:()=>`Convert item ${item()} into a video item built on a clip of 10 seconds or less, such as a gait cycle, a transfer, a functional movement, or a special test being performed.
+   {t:"Convert item # to a video item",d:"A clip of 10 seconds or less",p:()=>`Convert item ${item()} into a video item built on a clip of 10 seconds or less, such as a gait cycle, a transfer, a functional movement, or a special test being performed.
 ${MEDIA_RULES}
 - Write a short shot list for the clip: who is in it (a consenting actor or student, not a patient), start and end position, camera angle, and what happens second by second.
 Show the full revised item, then:
 ${MEDIA_SPEC}`},
-  {t:"Write an item from my image or video",d:"Attach your own media in the AI chat",p:()=>`I have attached an image or video to this message. Do not write an item yet.
+   {t:"Write an item from my image or video",d:"Attach your own media in the AI chat",p:()=>`I have attached an image or video to this message. Do not write an item yet.
 1. Describe what you see in clinical terms, and list anything you are unsure about.
 2. Stop and wait for me to confirm or correct your description.
 After I confirm, write item ${item()} around it, following the standards, length limits, and format from my first message.
 ${MEDIA_RULES.replace(/\n- Place[\s\S]*$/,"")}`},
-  {t:"Media necessity check",d:"Does the item need the media?",p:()=>`Check item ${item()}: could a student answer it correctly from the stem and options alone, without the image or video? If yes, remove the clues from the stem or options that make the media unnecessary, and show the revised item. Also check that the text alternative describes what is visible without naming the answer.`}
- ]},
- {h:"Audit",tag:"quality",items:[
-  {t:"Item-writing flaw audit",d:"Cueing, absolutes, negatives",p:()=>`Audit item ${item()} for item-writing flaws: grammatical cues, absolute terms, longest-correct-answer, convergence, word repeats between stem and key, negative stems, "all/none of the above," implausible distractors, and more than one defensible answer. Report each flaw found and give a corrected version.`},
-  {t:"Clinical accuracy check",d:"Against current CPGs",p:()=>(mode()==="none"?"":`Using the uploaded sources first, with page or section citations: `)+`Check the clinical accuracy of item ${item()} and its rationale against current APTA academy clinical practice guidelines and standard DPT references. Flag anything outdated, contested, or where practice varies. Name the guideline or source for each claim and mark [verify] where you are not certain.`},
-  {t:"NPTE alignment check",d:"Area, category, entry-level",p:()=>`Confirm the NPTE-PT system or area and content category for item ${item()}. Is this content appropriate for entry-level practice? Does it test clinical decision-making rather than isolated recall? Suggest changes if the alignment is weak.`},
-  {t:"Bloom's level check",d:"Does it test what we claim?",p:()=>`What cognitive level does item ${item()} actually require? Explain your reasoning. If it does not match the intended level, suggest a revision that does.`},
-  {t:"Scope check",d:"Inside the course objectives?",p:()=>`Does item ${item()} test content within this course's learning objectives and what students at this stage have been taught? Name the objective it maps to. If it reaches beyond scope, revise it.`},
-  {t:"Bias and language check",d:"Person-first, fair to all",p:()=>`Review item ${item()} for bias and language: person-first wording, stereotyped demographics, regional or cultural idioms, unnecessary reading load, and content that could disadvantage English-language learners. Suggest revisions.`}
- ]}
-];
+   {t:"Media necessity check",d:"Does the item need the media?",p:()=>`Check item ${item()}: could a student answer it correctly from the stem and options alone, without the image or video? If yes, remove the clues from the stem or options that make the media unnecessary, and show the revised item. Also check that the text alternative describes what is visible without naming the answer.`}
+  ]},
+  {h:"Single checks",items:[
+   {t:"Item-writing flaw audit",d:"Cueing, absolutes, negatives",p:()=>`Audit item ${item()} for item-writing flaws: grammatical cues, absolute terms, longest-correct-answer, convergence, word repeats between stem and key, negative stems, "all/none of the above," implausible distractors, and more than one defensible answer. Report each flaw found and give a corrected version.`},
+   {t:"Clinical accuracy check",d:"Against current CPGs",p:()=>(mode()==="none"?"":`Using the uploaded sources first, with page or section citations: `)+`Check the clinical accuracy of item ${item()} and its rationale against current APTA academy clinical practice guidelines and standard DPT references. Flag anything outdated, contested, or where practice varies. Name the guideline or source for each claim and mark [verify] where you are not certain.`},
+   {t:"NPTE alignment check",d:"Area, category, entry-level",p:()=>`Confirm the NPTE-PT system or area and content category for item ${item()}. Is this content appropriate for entry-level practice? Does it test clinical decision-making rather than isolated recall? Suggest changes if the alignment is weak.`},
+   {t:"Bloom's level check",d:"Does it test what we claim?",p:()=>`What cognitive level does item ${item()} actually require? Explain your reasoning. If it does not match the intended level, suggest a revision that does.`},
+   {t:"Scope check",d:"Inside the course objectives?",p:()=>`Does item ${item()} test content within this course's learning objectives and what students at this stage have been taught? Name the objective it maps to. If it reaches beyond scope, revise it.`},
+   {t:"Bias and language check",d:"Person-first, fair to all",p:()=>`Review item ${item()} for bias and language: person-first wording, stereotyped demographics, regional or cultural idioms, unnecessary reading load, and content that could disadvantage English-language learners. Suggest revisions.`}
+  ]}
+ ],
+ accept:[{t:"Accept item #, write the next one",adv:true,primary:true,d:"Locks this item in and asks for the next",p:()=>`I accept item ${item()} as written. Write item ${+item()+1} from the plan, using the same standards and format. Stop after that item.`}]
+};
+const WRITE_ITEM=()=>`${startMode()==="plan"?"I approve the plan. ":""}Write item ${item()} now, following the standards and format from my first message. Stop after this one item.`;
 
 const C=[
  {t:"QTI via text2qti",d:"Best for bulk import into Canvas",p:()=>`Reformat every final item into text2qti plain-text format so I can convert it to a Canvas QTI file. Follow these rules exactly:
@@ -1324,25 +1368,31 @@ Do not change wording that I already approved unless it fixes an error; if you c
 
 /* render library */
 const openSet=new Set();
+function makeCard(it,id){
+  const label=it.t.replace("#","#"+item());
+  const d=document.createElement("details");d.className="pcard"+(it.primary?" primary":"");d.id=id;d.open=openSet.has(id);
+  d.innerHTML=`<summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span><span class="t"></span><br><span class="d"></span></span><button type="button" class="btn gold small">Copy</button></summary><div class="body"><pre></pre></div>`;
+  const full=()=>it.p()+LOOP();
+  d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=it.d;d.querySelector("pre").textContent=full();
+  d.querySelector("summary .btn").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();copy(full(),label);flash(d);
+    if(it.adv){$("#f-item").value=+item()+1;refresh();toast(`Copied. Now working on item ${item()}.`);}});
+  d.addEventListener("toggle",()=>{d.open?openSet.add(id):openSet.delete(id);});
+  return d;
+}
 function renderLib(){
-  const lib=$("#library");lib.innerHTML="";
-  L.forEach((g,gi)=>{
+  const fill=(el,items,pre)=>{el.innerHTML="";items.forEach((it,i)=>el.appendChild(makeCard(it,pre+i)));};
+  fill($("#lib-check"),SECTIONS.check,"pc-");
+  fill($("#lib-fix"),SECTIONS.fix,"pf-");
+  fill($("#lib-accept"),SECTIONS.accept,"pa-");
+  const more=$("#lib-more");more.innerHTML="";
+  SECTIONS.more.forEach((g,gi)=>{
     const sec=document.createElement("div");sec.className="group";
-    sec.innerHTML=`<h3>${g.h} <span class="tag">${g.tag}</span></h3>`;
+    sec.innerHTML=`<h3></h3>`;sec.querySelector("h3").textContent=g.h;
     const wrap=document.createElement("div");wrap.className="plist";
-    g.items.forEach((it,ii)=>{
-      const id=`p-${gi}-${ii}`,label=it.t.replace("#","#"+item());
-      const d=document.createElement("details");d.className="pcard";d.id=id;d.open=openSet.has(id);
-      d.innerHTML=`<summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span><span class="t"></span><br><span class="d"></span></span><button type="button" class="btn gold small">Copy</button></summary><div class="body"><pre></pre></div>`;
-      const full=()=>it.p()+LOOP();
-      d.querySelector(".t").textContent=label;d.querySelector(".d").textContent=it.d;d.querySelector("pre").textContent=full();
-      d.querySelector("summary .btn").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();copy(full(),label);flash(d);
-        if(it.adv){$("#f-item").value=+item()+1;refresh();toast(`Copied. Item number is now ${item()}.`);}});
-      d.addEventListener("toggle",()=>{d.open?openSet.add(id):openSet.delete(id);});
-      wrap.appendChild(d);
-    });
-    sec.appendChild(wrap);lib.appendChild(sec);
+    g.items.forEach((it,ii)=>wrap.appendChild(makeCard(it,`pm-${gi}-${ii}`)));
+    sec.appendChild(wrap);more.appendChild(sec);
   });
+  document.querySelectorAll(".inum").forEach(e=>e.textContent=item());
   const cb=$("#canvas-btns");cb.innerHTML="";
   C.forEach((it,i)=>{
     const b=document.createElement("button");b.type="button";b.className="pbtn";b.id="c-"+i;
@@ -1415,8 +1465,9 @@ $("#btn-start").addEventListener("click",()=>{copy(starter(),"Starter prompt");
 $("#btn-go2").addEventListener("click",()=>unlock(2));
 $("#btn-skip").addEventListener("click",()=>{state.unlocked=3;show(2);});
 $("#btn-go3").addEventListener("click",()=>unlock(3));
-$("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=true));
-$("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#library .pcard").forEach(d=>d.open=false));
+$("#btn-expand").addEventListener("click",()=>document.querySelectorAll("#step-2 .pcard, #step-2 details.opt").forEach(d=>d.open=true));
+$("#btn-collapse").addEventListener("click",()=>document.querySelectorAll("#step-2 .pcard, #step-2 details.opt").forEach(d=>d.open=false));
+$("#btn-writeitem").addEventListener("click",()=>copy(WRITE_ITEM()+LOOP(),`Write item #${item()}`));
 wireDrop("syl-drop","syl-file",onSyllabus);
 wireDrop("src-drop","src-file",onSources);
 $("#syl-use").addEventListener("click",()=>{$("#f-obj").value=v("syl-found");$("#syl-review").hidden=true;$("#syl-status").innerHTML="<span>Objectives added. Edit them below if needed.</span>";refresh();});
